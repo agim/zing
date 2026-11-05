@@ -78,6 +78,12 @@ func SaveDraft(ctx context.Context, req *router.Request[schema.ComposeRequest]) 
 	if err := social.Convert(req.Body, &in); err != nil {
 		return out, err
 	}
+	if in.Destinations == nil {
+		in.Destinations = []string{}
+	}
+	if in.MediaIDs == nil {
+		in.MediaIDs = []string{}
+	}
 	if in.Timezone == "" {
 		in.Timezone = "UTC"
 	}
@@ -126,20 +132,24 @@ func SaveDraft(ctx context.Context, req *router.Request[schema.ComposeRequest]) 
 	if e = tx.Commit(ctx); e != nil {
 		return out, e
 	}
-	return schema.DraftView{ID: id, Text: in.Text, Destinations: in.Destinations, MediaIDs: in.MediaIDs, Status: "draft", ScheduledAt: in.ScheduledAt, Timezone: in.Timezone}, nil
+	var composition schema.ComposeRequest
+	if e = social.Convert(in, &composition); e != nil {
+		return out, e
+	}
+	return schema.DraftView{Composition: &composition, ID: id, Text: in.Text, Destinations: in.Destinations, MediaIDs: in.MediaIDs, Status: "draft", ScheduledAt: in.ScheduledAt, Timezone: in.Timezone}, nil
 }
 func Drafts(ctx context.Context, req *router.Request[router.None]) (schema.DraftList, error) {
 	out := schema.DraftList{Items: []schema.DraftView{}}
-	rows, e := db.From(ctx).Query(ctx, `SELECT id::text,text,destinations,media_ids,status,scheduled_at,timezone FROM draft WHERE owner_id=$1 ORDER BY updated_at DESC LIMIT 100`, social.Owner(ctx))
+	rows, e := db.From(ctx).Query(ctx, `SELECT id::text,text,destinations,media_ids,status,scheduled_at,timezone,reply_to FROM draft WHERE owner_id=$1 ORDER BY updated_at DESC LIMIT 100`, social.Owner(ctx))
 	if e != nil {
 		return out, e
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var v schema.DraftView
-		var d, m []byte
+		var d, m, composition []byte
 		var t *time.Time
-		if e = rows.Scan(&v.ID, &v.Text, &d, &m, &v.Status, &t, &v.Timezone); e != nil {
+		if e = rows.Scan(&v.ID, &v.Text, &d, &m, &v.Status, &t, &v.Timezone, &composition); e != nil {
 			return out, e
 		}
 		if e = json.Unmarshal(d, &v.Destinations); e != nil {
@@ -150,6 +160,13 @@ func Drafts(ctx context.Context, req *router.Request[router.None]) (schema.Draft
 		}
 		if t != nil {
 			v.ScheduledAt = t.Format(time.RFC3339)
+		}
+		if len(composition) > 0 && string(composition) != "null" {
+			var c schema.ComposeRequest
+			if e = json.Unmarshal(composition, &c); e != nil {
+				return out, e
+			}
+			v.Composition = &c
 		}
 		out.Items = append(out.Items, v)
 	}
@@ -178,6 +195,9 @@ func Publish(ctx context.Context, req *router.Request[router.None]) (schema.Oper
 	var in schema.ComposeInput
 	if e = json.Unmarshal(input, &in); e != nil {
 		return schema.OperationResult{}, e
+	}
+	if len(in.Destinations) == 0 {
+		return schema.OperationResult{}, router.Errorf(422, "Choose at least one connected account before publishing")
 	}
 	if e = Validate(ctx, owner, in); e != nil {
 		return schema.OperationResult{}, e

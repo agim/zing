@@ -384,6 +384,7 @@ type ComposeInput {
  rootCid string
 }
 type DraftView {
+ composition ComposeRequest?
  id string
  text string
  destinations string[]
@@ -458,7 +459,7 @@ type MessageInput {
 type ComposeRequest {
  relayParentDraftId string?
  text string @min(1) @max(5000)
- destinations string[] @min(1) @max(20)
+ destinations string[] @max(20)
  mediaIds string[] @max(4)
  scheduledAt string?
  timezone string?

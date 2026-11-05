@@ -142,6 +142,31 @@ test("verified account sees honest empty states and can switch themes on mobile"
   await expect(page.locator("body")).toHaveAttribute("data-theme", "dark");
   await page.reload();
   await expect(page.locator("body")).toHaveAttribute("data-theme", "dark");
+  await page
+    .getByRole("button", { name: "Create a post", exact: true })
+    .click();
+  await page
+    .getByRole("textbox", { name: "Post text", exact: true })
+    .fill("An idea before connecting any accounts");
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  await expect(page).toHaveURL(/#Publishing$/);
+  await expect(page.getByRole("heading", { name: "Ideas, in motion.", exact: true })).toBeVisible();
+  await expect(
+    page.getByText("An idea before connecting any accounts", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByText("An idea before connecting any accounts", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Continue writing", exact: true })
+    .click();
+  await expect(
+    page.getByRole("textbox", { name: "Post text", exact: true }),
+  ).toHaveValue("An idea before connecting any accounts");
+  await expect(
+    page.getByRole("button", { name: "Publish", exact: true }),
+  ).toBeDisabled();
   await page.setViewportSize({ width: 390, height: 844 });
   await expectNoSidewaysScroll(page);
   await page.getByRole("button", { name: "Messages", exact: true }).click();

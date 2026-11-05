@@ -283,3 +283,51 @@ func TestSuccessfulDestinationsAreNotRequeued(t *testing.T) {
 		t.Fatalf("duplicate publications %d", writes.Load())
 	}
 }
+
+func TestDraftCanBeSavedBeforeConnectingAccountsButCannotPublish(t *testing.T) {
+	s := setup(t, nil)
+	_, token := account(t, s, true)
+	var draft schema.DraftView
+	r := s.JSON(t, "POST", "/api/v1/drafts", map[string]any{"text": "An idea for later", "destinations": []string{}, "mediaIds": []string{}, "timezone": "UTC"}, &draft, lidzatest.Bearer(token))
+	if r.StatusCode != 200 || draft.ID == "" {
+		t.Fatalf("cannot save unconnected draft: %d", r.StatusCode)
+	}
+	if r = s.JSON(t, "POST", "/api/v1/drafts/"+draft.ID+"/publish", nil, nil, lidzatest.Bearer(token)); r.StatusCode != 422 {
+		t.Fatalf("destination-free publication accepted: %d", r.StatusCode)
+	}
+	var list schema.DraftList
+	s.JSON(t, "GET", "/api/v1/drafts", nil, &list, lidzatest.Bearer(token))
+	var found bool
+	for _, d := range list.Items {
+		if d.ID == draft.ID {
+			found = true
+			if d.Text != "An idea for later" || d.Status != "draft" {
+				t.Fatalf("draft changed after rejected publication: %+v", d)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("saved draft did not survive reload")
+	}
+}
+func TestReplyDraftRetainsItsThreadAndRelayContext(t *testing.T) {
+	s := setup(t, nil)
+	owner, token := account(t, s, true)
+	id := connect(t, s, owner, "mastodon")
+	var draft schema.DraftView
+	r := s.JSON(t, "POST", "/api/v1/drafts", map[string]any{"text": "Reply saved for later", "destinations": []string{id}, "mediaIds": []string{}, "timezone": "UTC", "replyConnectionId": id, "replyId": "parent-status", "rootId": "root-status", "rootCid": "root-cid"}, &draft, lidzatest.Bearer(token))
+	if r.StatusCode != 200 {
+		t.Fatalf("cannot save reply %d", r.StatusCode)
+	}
+	var list schema.DraftList
+	s.JSON(t, "GET", "/api/v1/drafts", nil, &list, lidzatest.Bearer(token))
+	for _, d := range list.Items {
+		if d.ID == draft.ID {
+			if d.Composition == nil || d.Composition.ReplyID == nil || *d.Composition.ReplyID != "parent-status" || d.Composition.RootID == nil || *d.Composition.RootID != "root-status" {
+				t.Fatalf("thread context was lost: %+v", d.Composition)
+			}
+			return
+		}
+	}
+	t.Fatal("reply draft missing")
+}

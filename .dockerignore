@@ -17,3 +17,5 @@ config/owner-claim
 storage
 
 config/credentials.yml.enc
+
+__pycache__

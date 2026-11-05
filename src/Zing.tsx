@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
   api,
   ApiError,
@@ -147,9 +148,15 @@ function ErrorNotice({ error }: { error: unknown }) {
 
 export function Zing() {
   const queryClient = useQueryClient();
-  const [page, setPage] = useState<Page>("Home"),
-    [path, setPath] = useState("/"),
-    [network, setNetwork] = useState(""),
+  const location = useLocation();
+  const navigate = useNavigate();
+  const section = location.hash.split("?")[0];
+  const page: Page =
+    pages.includes(section as Page) || section === "Compose"
+      ? (section as Page)
+      : "Home";
+  const path = location.pathname;
+  const [network, setNetwork] = useState(""),
     [search, setSearch] = useState(""),
     [searchInput, setSearchInput] = useState("");
   const [theme, setTheme] = useState("system"),
@@ -233,14 +240,10 @@ export function Zing() {
     retry: false,
   });
   useEffect(() => {
-    setPath(window.location.pathname);
-    const hash = window.location.hash.slice(1).split("?")[0];
     if (window.location.hash.includes("connect_error="))
       setFailure(
         new Error("Account authorization failed or expired. Please reconnect."),
       );
-    if (pages.includes(hash as Page) || hash === "Compose")
-      setPage(hash as Page);
     const t = localStorage.getItem("zing-theme") || "system";
     setTheme(t);
   }, []);
@@ -268,18 +271,9 @@ export function Zing() {
     const t = window.setTimeout(() => setNotice(""), 5000);
     return () => clearTimeout(t);
   }, [notice]);
-  useEffect(() => {
-    const handler = () => {
-      const p = window.location.hash.slice(1) as Page;
-      if (pages.includes(p) || p === "Compose") setPage(p);
-    };
-    window.addEventListener("hashchange", handler);
-    return () => window.removeEventListener("hashchange", handler);
-  }, []);
   function go(p: Page) {
-    setPage(p);
     setFailure(undefined);
-    window.location.hash = p;
+    void navigate({ to: "/", hash: p });
   }
   async function act(fn: () => Promise<unknown>, success?: string) {
     if (busy) return;
@@ -315,6 +309,9 @@ export function Zing() {
       setSchedule("");
       localStorage.removeItem("zing-unsaved:" + user?.subject);
       setPublicationTab("Delivery history");
+      go("Publishing");
+    } else {
+      setPublicationTab("Drafts");
       go("Publishing");
     }
     refresh("drafts");
@@ -404,8 +401,7 @@ export function Zing() {
       <AuthPage
         path={path}
         onDone={() => {
-          setPath("/");
-          window.history.replaceState({}, "", "/");
+          void navigate({ to: "/", hash: "Home" });
           refresh("session");
         }}
       />
@@ -1541,11 +1537,15 @@ export function Zing() {
   );
   function editDraft(d: DraftView) {
     setCompose({
+      ...d.composition,
       text: d.text,
-      destinations: d.destinations,
+      destinations: d.destinations.filter((id) =>
+        conns.some((c) => c.id === id),
+      ),
       mediaIds: d.mediaIds,
       timezone: d.timezone,
     });
+    setRelayCandidate(d.composition?.relayParentDraftId || "");
     setDraftId(d.id);
     setSchedule(d.scheduledAt ? toLocalInput(d.scheduledAt) : "");
     go("Compose");

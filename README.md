@@ -19,6 +19,8 @@ lidza credentials init
 lidza dev
 ```
 
+For a configured local app with a private operator and real loopback SMTP inbox, see `docs/local-development.md` (`./scripts/local.sh --configure --build` after installation).
+
 Use PostgreSQL locally; `.env.example` lists the settings. For local-only development set CACHE_URL=memory, MAIL_PROVIDER=outbox, and STORAGE_PROVIDER=local. Email verification is required before connecting accounts. Development verification emails can be inspected through Līdza's mail outbox/operator tools. Production must use real email delivery.
 
 Mastodon uses instance-specific OAuth. Bluesky defaults to OAuth on a public HTTPS origin; an explicit app-password connection works for local development and requires chat access for messages. Threads requires developer-app configuration and approved permissions. No production screen fabricates provider success.

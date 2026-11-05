@@ -14,3 +14,5 @@ storage/
 
 # Environment-specific encrypted settings are provisioned independently.
 config/credentials.yml.enc
+
+__pycache__/

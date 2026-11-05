@@ -964,18 +964,25 @@ func (v ComposeInput) Validate() error {
 
 // DraftView is an API type.
 type DraftView struct {
-	ID           string   `json:"id"`
-	Text         string   `json:"text"`
-	Destinations []string `json:"destinations"`
-	MediaIDs     []string `json:"mediaIds"`
-	Status       string   `json:"status"`
-	ScheduledAt  string   `json:"scheduledAt"`
-	Timezone     string   `json:"timezone"`
+	Composition  *ComposeRequest `json:"composition"`
+	ID           string          `json:"id"`
+	Text         string          `json:"text"`
+	Destinations []string        `json:"destinations"`
+	MediaIDs     []string        `json:"mediaIds"`
+	Status       string          `json:"status"`
+	ScheduledAt  string          `json:"scheduledAt"`
+	Timezone     string          `json:"timezone"`
 }
 
 // Validate applies the rules of DraftView from schema.lidza.
 func (v DraftView) Validate() error {
 	var errs validate.Errors
+	if v.Composition != nil {
+		x := *v.Composition
+		if err := x.Validate(); err != nil {
+			errs.Add("composition", "nested", err.Error())
+		}
+	}
 	if v.ID == "" {
 		errs.Add("id", "required", "required")
 	}
@@ -1304,9 +1311,6 @@ func (v ComposeRequest) Validate() error {
 	}
 	if len(v.Text) > 5000 {
 		errs.Add("text", "max", "at most 5000 character(s)")
-	}
-	if len(v.Destinations) < 1 {
-		errs.Add("destinations", "min", "at least 1 item(s)")
 	}
 	if len(v.Destinations) > 20 {
 		errs.Add("destinations", "max", "at most 20 item(s)")
