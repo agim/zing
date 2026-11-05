@@ -1,0 +1,507 @@
+// Data shapes for zing: the single source for Go structs (schema/),
+// the Postgres DDL and migrations (db/), and the client types. Run
+// `lidza gen` after editing
+// `lidza dev` does it on save.
+//
+// model: a table and a struct. type: an API shape. enum: a fixed set.
+
+type Greeting {
+  name    string @min(1) @max(100)
+  message string
+}
+
+// Types of the auth pack.
+model AuthSession @table("auth_session") {
+  id          string @id
+  subject     string @index
+  refreshHash string @unique
+  prevRefreshHash string?
+  rotatedAt   time?
+  expiresAt   time
+  revokedAt   time?
+  remember    bool   @default(true)
+  createdAt   time   @default(now())
+}
+
+// An authenticator-app factor for an account. The secret is sealed with
+// LIDZA_MASTER_KEY
+// backup codes are one-way hashes and each TOTP time step
+// can be used only once.
+model AuthFactor @table("auth_factor") {
+  subject      string   @id
+  secretSealed string
+  lastStep     bigint   @default(0)
+  backupCodes  string[]
+  enabledAt    time?
+  failedCount  int      @default(0)
+  failedAt     time?
+  createdAt    time     @default(now())
+  updatedAt    time     @default(now())
+}
+
+// A fresh second-factor check, bound to one sign-in, purpose and target.
+// It is never a broad account unlock.
+model AuthStepUp @table("auth_step_up") {
+  id        uuid   @id @default(uuid())
+  subject   string
+  sessionId string @index
+  purpose   string
+  target    string @default("")
+  expiresAt time
+  createdAt time   @default(now())
+  @@unique(sessionId, purpose, target)
+}
+
+model AuthToken @table("auth_token") {
+  id        string @id
+  purpose   string @index
+  subject   string @index
+  hash      string @unique
+  expiresAt time
+  usedAt    time?
+  createdAt time   @default(now())
+}
+
+// Every account that ever signed in, kept by the auth pack: who, when
+// first and last, and whether an admin disabled it.
+model AuthAccount @table("auth_account") {
+  subject     string @id
+  label       string?
+  disabledAt  time?
+  firstSeenAt time   @default(now())
+  lastSeenAt  time   @default(now())
+}
+
+// The pack's own users, for apps that mount its sign-in (auth.Mount):
+// email and password for local sign-in, or no password for an account
+// that only signs in through a provider. An app with its own users table
+// leaves this one empty.
+model AuthUser @table("auth_user") {
+  subject      string @id
+  email        string? @unique
+  name         string?
+  passwordHash string?
+  verifiedAt   time?
+  createdAt    time   @default(now())
+  updatedAt    time   @default(now())
+}
+
+// One row per provider account (Google, GitHub, an OIDC issuer) linked
+// to a subject
+// id is provider:providerSubject.
+model AuthIdentity @table("auth_identity") {
+  id              string @id
+  provider        string @index
+  providerSubject string
+  subject         string @index
+  email           string?
+  name            string?
+  createdAt       time   @default(now())
+  lastUsedAt      time   @default(now())
+}
+
+// One row per external account a user connected (auth.Conn): the grant's
+// tokens sealed with the master key, never sent to the browser
+// id is
+// provider:owner.
+model AuthConnection @table("auth_connection") {
+  id            string @id
+  owner         string
+  provider      string
+  subject       string
+  login         string @default("")
+  scopes        string @default("")
+  tokenType     string @default("")
+  accessSealed  string
+  refreshSealed string @default("")
+  expiresAt     time?
+  reconnect     bool   @default(false)
+  createdAt     time   @default(now())
+  updatedAt     time   @default(now())
+  @@unique(owner, provider)
+}
+
+// One role a subject holds in a scope (auth.Roles): a team, a
+// workspace, or "" for the whole app. The roles' permissions are the
+// app's, in code.
+model AuthMember @table("auth_member") {
+  id        uuid   @id @default(uuid())
+  subject   string
+  scope     string @default("")
+  role      string
+  grantedBy string?
+  createdAt time   @default(now())
+  @@unique(subject, scope, role)
+  @@index(scope, role)
+}
+
+// The app's owner claim (AUTH_OWNER_CLAIM): one row, id "owner". The
+// token is kept as its hash until an account claims with it
+// then the
+// account is the owner and the row stays, so ownership never reopens.
+model AuthOwnerClaim @table("auth_owner_claim") {
+  id        string @id
+  tokenHash string
+  subject   string?
+  claimedAt time?
+  createdAt time   @default(now())
+  updatedAt time   @default(now())
+}
+
+// A workspace (auth.Teams): a group of accounts sharing the app's data.
+// Its id is the scope of its members' roles in auth_member.
+model AuthWorkspace @table("auth_workspace") {
+  id        uuid   @id @default(uuid())
+  name      string
+  createdBy string
+  createdAt time   @default(now())
+  updatedAt time   @default(now())
+}
+
+// Account-owned non-sensitive choices
+// never session claims or credentials.
+model AuthPreference @table("auth_preference") {
+  subject   string @id
+  values    json
+  updatedAt time @default(now())
+}
+
+// An invitation to a workspace, bound to an email address
+// the token is
+// kept as its hash.
+model AuthInvite @table("auth_invite") {
+  id         uuid   @id @default(uuid())
+  workspace  string
+  email      string
+  role       string
+  tokenHash  string @unique
+  invitedBy  string
+  expiresAt  time
+  acceptedAt time?
+  acceptedBy string?
+  revokedAt  time?
+  createdAt  time   @default(now())
+  @@index(workspace)
+}
+
+// Types of the jobs pack.
+// Background jobs (jobs.Queue). uniqueKey is set by jobs.Unique while the
+// job is pending or running and cleared when it finishes
+// NULLs do not
+// collide, so the unique index holds one live job per kind and key.
+model Job @table("job") {
+  id          uuid   @id @default(uuid())
+  kind        string
+  payload     json
+  state       string @default("pending")
+  runAt       time   @default(now())
+  attempts    int    @default(0)
+  maxAttempts int    @default(5)
+  lockedAt    time?
+  finishedAt  time?
+  lastError   text?
+  createdAt   time   @default(now())
+  uniqueKey   string?
+  // The W3C traceparent of the span that enqueued the job, with
+  // tracing on
+  // the run continues that trace.
+  traceParent string?
+  @@index(state, runAt)
+  @@unique(kind, uniqueKey)
+}
+
+// Recurring schedules (jobs.Queue.Schedule): one row per scheduled kind
+// with its next due time
+// the node that moves nextRunAt on enqueues.
+model JobSchedule @table("job_schedule") {
+  kind      string @id
+  spec      string
+  nextRunAt time
+  lastRunAt time?
+  lastJobId uuid?
+  updatedAt time   @default(now())
+}
+
+// Types of the mail pack.
+// Types of the mail pack: the outbox, one row per message sent or queued.
+model MailMessage @table("mail_message") {
+  id         uuid   @id @default(uuid())
+  recipient  string @index
+  fromAddress string?
+  replyTo    string?
+  headers    json?
+  cc         string[]?
+  bcc        string[]?
+  attachments json?
+  subject    string
+  text       text?
+  html       text?
+  template   string?
+  status     string @index
+  providerId string?
+  error      text?
+  attempts   int
+  createdAt  time   @default(now()) @index
+  sentAt     time?
+}
+
+// Zing application data. Owner fields are always derived from the session.
+model SocialConnection {
+ syncedAt time?
+ id uuid @id @default(uuid())
+ ownerId string @index
+ network string
+ server string
+ subject string
+ handle string
+ accessSealed text
+ refreshSealed text @default("")
+ expiresAt time?
+ reconnect bool @default(false)
+ createdAt time @default(now())
+ @@unique(ownerId, network, subject)
+}
+model OAuthAttempt {
+ id string @id
+ ownerId string @index
+ network string
+ server string
+ clientId string
+ clientSecretSealed text
+ expiresAt time
+}
+model Draft {
+ id uuid @id @default(uuid())
+ ownerId string @index
+ text text
+ destinations json
+ mediaIds json
+ replyTo json?
+ status string @default("draft")
+ scheduledAt time?
+ timezone string @default("UTC")
+ createdAt time @default(now())
+ updatedAt time @default(now())
+}
+model Delivery {
+ id uuid @id @default(uuid())
+ ownerId string @index
+ draftId uuid @index
+ connectionId uuid
+ state string @default("pending")
+ remoteId string @default("")
+ remoteCid string @default("")
+ remoteUrl string @default("")
+ error text @default("")
+ attempts int @default(0)
+ updatedAt time @default(now())
+ @@unique(draftId, connectionId)
+}
+model Media {
+ id uuid @id @default(uuid())
+ ownerId string @index
+ key string
+ contentType string
+ alt text @default("")
+ createdAt time @default(now())
+}
+
+type ConnectionInput {
+ network string @min(1) @max(20)
+ server string @max(255)
+ handle string @max(255)
+ appPassword string @max(255)
+}
+type ConnectionView {
+ id string
+ network string
+ server string
+ subject string
+ handle string
+ reconnect bool
+ capabilities string[]
+}
+type ConnectionList {
+ items ConnectionView[]
+}
+type ConnectResult {
+ url string
+}
+type SocialAccount {
+ id string
+ handle string
+ name string
+ avatar string
+ bio string
+ followers int
+ following int
+}
+type SocialPost {
+ relayParentDraftId string
+ id string
+ cid string
+ connectionId string
+ network string
+ author SocialAccount
+ text string
+ createdAt string
+ url string
+ images string[]
+ likes int
+ replies int
+ reposts int
+ liked bool
+ reposted bool
+ rootId string
+ rootCid string
+ visibility string
+}
+type FeedPage {
+ items SocialPost[]
+ cursor string
+ warnings string[]
+}
+type ActionInput {
+ connectionId string
+ action string
+ target string
+ cid string
+}
+type OperationResult {
+ ok bool
+}
+type ComposeInput {
+ relayParentDraftId string
+ text string @min(1) @max(5000)
+ destinations string[] @min(1) @max(20)
+ mediaIds string[] @max(4)
+ scheduledAt string
+ timezone string
+ replyConnectionId string
+ replyId string
+ replyCid string
+ rootId string
+ rootCid string
+}
+type DraftView {
+ id string
+ text string
+ destinations string[]
+ mediaIds string[]
+ status string
+ scheduledAt string
+ timezone string
+}
+type DraftList {
+ items DraftView[]
+}
+type DeliveryView {
+ id string
+ draftId string
+ connectionId string
+ state string
+ remoteUrl string
+ error string
+ attempts int
+}
+type DeliveryList {
+ items DeliveryView[]
+}
+type MediaView {
+ id string
+ url string
+ alt string
+}
+type MediaAlt {
+ alt string @max(2000)
+}
+type NotificationView {
+ id string
+ network string
+ connectionId string
+ kind string
+ text string
+ createdAt string
+}
+type NotificationList {
+ items NotificationView[]
+ warnings string[]
+}
+type ConversationView {
+ id string
+ connectionId string
+ network string
+ title string
+ lastText string
+ unread bool
+ recipient string
+}
+type ConversationList {
+ items ConversationView[]
+ warnings string[]
+}
+type MessageView {
+ id string
+ sender string
+ text string
+ createdAt string
+}
+type MessageList {
+ items MessageView[]
+}
+type MessageInput {
+ connectionId string
+ conversationId string
+ text string @min(1) @max(1000)
+}
+
+type ComposeRequest {
+ relayParentDraftId string?
+ text string @min(1) @max(5000)
+ destinations string[] @min(1) @max(20)
+ mediaIds string[] @max(4)
+ scheduledAt string?
+ timezone string?
+ replyConnectionId string?
+ replyId string?
+ replyCid string?
+ rootId string?
+ rootCid string?
+}
+type ConnectionRequest {
+ network string @min(1) @max(20)
+ server string? @max(255)
+ handle string? @max(255)
+ appPassword string? @max(255)
+}
+type ActionRequest {
+ connectionId string
+ action string
+ target string
+ cid string?
+}
+
+model OAuthData {
+ id string @id
+ ownerId string @index
+ sealed text
+ expiresAt time
+}
+
+type ReconcileRequest {
+ remoteId string @min(1) @max(1000)
+}
+
+type PersonResult {
+ connectionId string
+ network string
+ profile SocialAccount
+}
+type PeoplePage {
+ items PersonResult[]
+ warnings string[]
+}
+type OpenConversationRequest {
+ connectionId string
+ recipient string
+}

@@ -1,0 +1,16 @@
+node_modules/
+dist/*
+!dist/.gitkeep
+.lidza/
+bin/
+.env
+.env.*
+!.env.example
+!.env.test
+playwright-report/
+test-results/
+config/master.key
+storage/
+
+# Environment-specific encrypted settings are provisioned independently.
+config/credentials.yml.enc

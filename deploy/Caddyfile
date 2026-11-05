@@ -1,0 +1,6 @@
+{$ZING_DOMAIN} {
+ encode zstd gzip
+ @operator path /metrics /mcp /debug/* /tls-allow
+ respond @operator 404
+ reverse_proxy app:3000
+}

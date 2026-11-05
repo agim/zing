@@ -1,0 +1,46 @@
+# Run from the repository root: docker compose --env-file .env.production -f deploy/compose.yaml up --build -d
+services:
+  app:
+    build: ..
+    restart: unless-stopped
+    env_file: ../.env.production
+    environment:
+      LIDZA_ADDR: 0.0.0.0:3000
+      DATABASE_URL: postgres://zing:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/zing?sslmode=disable
+      CACHE_URL: redis://valkey:6379/0
+      REALTIME_BUS_URL: redis://valkey:6379/1
+      DB_MIGRATE: 'true'
+      AUTH_OWNER_CLAIM: 'true'
+      AUTH_COOKIE_SECURE: 'true'
+    ports: ['127.0.0.1:3000:3000']
+    depends_on:
+      postgres: {condition: service_healthy}
+      valkey: {condition: service_healthy}
+    volumes: ['owner-claim:/app/config/owner-claim']
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zing
+      POSTGRES_USER: zing
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes: ['postgres:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U zing -d zing']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  valkey:
+    image: valkey/valkey:8
+    restart: unless-stopped
+    command: ['valkey-server', '--appendonly', 'yes']
+    volumes: ['valkey:/data']
+    healthcheck:
+      test: ['CMD', 'valkey-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  postgres:
+  valkey:
+  owner-claim:

@@ -1,0 +1,19 @@
+.git
+.lidza
+node_modules
+dist
+bin
+target
+**/rust/target
+playwright-report
+test-results
+.env
+.env.*
+!.env.example
+# The master key never enters an image: the deployment sets LIDZA_MASTER_KEY.
+config/master.key
+# A local owner claim token stays local: an image's claim is its deployment's.
+config/owner-claim
+storage
+
+config/credentials.yml.enc
