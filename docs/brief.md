@@ -11,7 +11,7 @@ Change an answer the same way, or edit it here.
 
 ### What does the app do, in one sentence? <!-- brief:purpose -->
 
-Unified social client for Mastodon, Bluesky and Threads; explicit publishing and linked-account relaying, native private messages.
+Self-hosted Zing social platform that hosts its own users and social content, with server-side interoperability with Mastodon/ActivityPub and Bluesky/AT Protocol. Connecting existing external accounts is an additional feature, not the core product. The choice between established server backends and a native Zing federation implementation is pending the owner’s answer.
 
 ### Who uses it? <!-- brief:users -->
 
@@ -19,7 +19,7 @@ Public open-source repository; each installation chooses public/private access. 
 
 ### What are the three to five things people come to do? <!-- brief:journeys -->
 
-Register and verify email; connect networks; read, search, follow and interact; compose with images; save and schedule; inspect independent deliveries; read and send native messages.
+Register and verify email; create a hosted social identity; publish and interact locally without an external social account; discover and interact with remote users through supported protocols; compose with images, drafts and schedules; manage privacy and moderation. Existing network connections remain supplementary.
 
 ### What is out of scope for now? <!-- brief:out_of_scope -->
 

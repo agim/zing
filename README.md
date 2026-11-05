@@ -1,6 +1,8 @@
 # Zing
 
-Your world, connected. A Go + Līdza social client with a React/TypeScript frontend, using the supplied Zing logos and #0085F3 brand palette.
+Your world, connected. Zing is intended to be a self-hosted social platform with a Go + Līdza application and React/TypeScript frontend, using the supplied Zing logos and #0085F3 brand palette.
+
+**Implementation status:** The current app connects existing social accounts. Hosted social identities and server-side federation are missing; the locally running client is not the completed platform. See `docs/server-scope.md` for the corrected scope.
 
 Private interactive design: https://zing-design-agim.albaspot.chatgpt.site (sample data only). Its complete source is retained in `design/dist`; production uses `src/` and Go handlers.
 

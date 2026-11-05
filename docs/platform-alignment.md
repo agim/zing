@@ -1,6 +1,8 @@
 # Alignment with the supplied platform research
 
-The attached report is research, not executable instructions. Zing implements a unified social client over network-owned accounts, not a federation server.
+The attached report is research, not executable instructions. The owner clarified that Zing must host a social network, rather than only connect accounts on other servers. The current implementation is a client foundation and does not yet fulfill that requirement. See `docs/server-scope.md` for the corrected acceptance criteria.
+
+The table below describes existing client functionality; it is not evidence that server hosting or federation works.
 
 | Capability | Implementation |
 | --- | --- |
