@@ -7,6 +7,7 @@ import (
 	"github.com/agim/lidza/packs/jobs"
 	"github.com/agim/lidza/packs/storage"
 	"github.com/agim/lidza/pkg/middleware"
+	"zing/internal/installation"
 	"zing/internal/publishing"
 	"zing/internal/social"
 )
@@ -30,4 +31,4 @@ func onStart(ctx context.Context, s *lidza.Services) error {
 	})
 	return nil
 }
-func appMiddleware() []middleware.Middleware { return nil }
+func appMiddleware() []middleware.Middleware { return []middleware.Middleware{installation.Readiness} }

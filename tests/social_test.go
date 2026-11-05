@@ -33,6 +33,8 @@ func setup(t *testing.T, rt http.RoundTripper) *lidzatest.Server {
 	t.Setenv("LIDZA_MASTER_KEY", strings.Repeat("ab", 32))
 	t.Setenv("MAIL_PROVIDER", "outbox")
 	t.Setenv("CACHE_URL", "memory")
+	t.Setenv("ZING_ACCESS_MODE", "public")
+	t.Setenv("ZING_REQUIRE_SETUP", "false")
 	t.Setenv("STORAGE_DIR", t.TempDir())
 	if rt == nil {
 		rt = transport(func(*http.Request) (*http.Response, error) { return nil, errors.New("unexpected network call") })

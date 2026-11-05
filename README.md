@@ -4,6 +4,10 @@ Your world, connected. A Go + Līdza social client with a React/TypeScript front
 
 Private interactive design: https://zing-design-agim.albaspot.chatgpt.site (sample data only). Its complete source is retained in `design/dist`; production uses `src/` and Go handlers.
 
+## Self-host
+
+Use Līdza Deploy, Docker, or your own host/domain. Open `/setup` to claim the operator account and choose private/public access, mail, storage, and optional provider credentials. Settings are encrypted in PostgreSQL. The public repository and the privacy of a hosted instance are independent. See `docs/self-hosting.md` for bootstrap requirements and the private Albaspot deployment profile.
+
 ## Develop
 
 Install the Līdza CLI at the version in go.mod, then run:

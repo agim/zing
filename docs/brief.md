@@ -15,7 +15,7 @@ Unified social client for Mastodon, Bluesky and Threads; explicit publishing and
 
 ### Who uses it? <!-- brief:users -->
 
-Public service with separate Zing accounts; Sites remains a private interactive design preview.
+Public open-source repository; each installation chooses public/private access. The owner instance is private at zing.albaspot.com via lidza-deploy.albaspot.com.
 
 ### What are the three to five things people come to do? <!-- brief:journeys -->
 
@@ -129,7 +129,7 @@ _Open._
 
 ### When should an agent push? <!-- brief:push -->
 
-Implement in agim/zing. Initial application commit on main; completed modules pass verification before push. Public production deployment awaits host and provider configuration.
+Commit and push completed modules to agim/zing main after verification. Regular tests run at feature/module completion and full release boundaries. Keep repository public; deployment instance privacy is configured independently.
 
 ### What must an agent ask before doing? <!-- brief:approval -->
 

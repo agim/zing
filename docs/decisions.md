@@ -64,3 +64,7 @@ Touches: docs/brief.md
 ## 2026-11-05: Pack db added
 
 Why: PostgreSQL owns user data, durable delivery states, transactional job enqueue and per-account isolation.
+
+## 2026-11-05: Admin page First-run setup
+
+Why: Only a claimed/authorized operator configures instance-wide origin, private/public access, mail, storage and optional Threads credentials. Values are sealed in PostgreSQL through the framework store. The page summarizes no users social data and never reveals saved secrets.

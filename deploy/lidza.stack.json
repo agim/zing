@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "required_environment": ["LIDZA_MASTER_KEY"],
+  "generated_secrets": ["AUTH_SECRET"],
+  "configuration": [
+    {"name":"LIDZA_MASTER_KEY","stage":"deploy","label":"Database encryption master key","secret":true,"help":"Provide a stable 64-character hexadecimal key; preserve it across redeployments and backups."},
+    {"name":"MAIL_PROVIDER","stage":"setup","label":"Mail provider","help":"Choose your own SMTP or supported provider at /setup."},
+    {"name":"MAIL_FROM","stage":"setup","label":"Sender address","help":"Configure and test your sender during first-run setup."},
+    {"name":"THREADS_CLIENT_ID","stage":"optional","label":"Threads app ID"},
+    {"name":"THREADS_CLIENT_SECRET","stage":"optional","label":"Threads app secret","secret":true}
+  ],
+  "bootstrap_readiness": {
+    "path": "/api/v1/health",
+    "readyz_body_contains": "Server setup is required",
+    "setup_path": "/setup"
+  },
+  "services": [
+    {
+      "name":"app",
+      "role":"app",
+      "policy":"hardened",
+      "build":{"dockerfile":"Dockerfile"},
+      "environment":{"DB_MIGRATE":"true","AUTH_OWNER_CLAIM":"true","ZING_REQUIRE_SETUP":"true"},
+      "health_command":["/app/zing-healthcheck","http://127.0.0.1:3000/api/v1/health"]
+    }
+  ]
+}

@@ -415,6 +415,9 @@ export function Zing() {
       <div className="auth card form-card">
         <Brand />
         <h1 className="title">Check your inbox.</h1>
+        <p className="meta">
+          Installing this server? <a href="/setup">Continue operator setup</a>
+        </p>
         <p className="subtitle">
           Verify {user.email} before connecting social accounts.
         </p>
@@ -1837,6 +1840,8 @@ function AuthPage({ path, onDone }: { path: string; onDone: () => void }) {
         )}
       </div>
       <p className="meta center">
+        <a href="/setup">First-run operator setup</a>
+        <br />
         By continuing, you accept the <a href="/terms">terms</a> and{" "}
         <a href="/privacy">privacy policy</a>.
       </p>

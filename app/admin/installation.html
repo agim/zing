@@ -1,0 +1,17 @@
+{{define "content"}}
+<div class="card"><div class="card-body">
+<h2 class="card-title">Set up your Zing instance</h2>
+<p>This configures this installation only. You can use Līdza Deploy, Docker, or your own service host and domain.</p>
+{{if .Data.Configured}}<div class="alert alert-success">First-run settings have been saved. Use the same pages to update them later.</div>{{end}}
+<ol>
+<li><a href="/admin/settings?section=zing-instance">Choose your application origin and private/public access</a>. For a private instance, list the email addresses allowed to register and sign in.</li>
+<li><a href="/admin/mail">Configure your mail provider and sender</a>. Use your own SMTP service or a supported provider; send a test email.</li>
+<li><a href="/admin/storage">Choose file storage</a>. Use your own S3-compatible bucket or a persistent local volume. Keep existing objects accessible when changing providers.</li>
+<li><a href="/admin/settings?section=zing-threads">Optionally configure a Threads developer app</a>. Each operator supplies their own credentials and obtains approval.</li>
+</ol>
+<p>Secrets are masked after saving and stored encrypted in this installation’s database. Environment overrides remain authoritative until removed. PostgreSQL and the master key are bootstrap infrastructure and cannot be stored solely in the database they unlock.</p>
+<dl><dt>Origin</dt><dd>{{.Data.Origin}}</dd><dt>Access</dt><dd>{{if .Data.Private}}Private{{else}}Public{{end}}</dd><dt>Mail provider</dt><dd>{{.Data.Mail}}</dd><dt>Storage provider</dt><dd>{{.Data.Storage}}</dd></dl>
+<form method="post" action="/admin/installation/complete"><button class="btn btn-primary" type="submit">Save first-run settings in database</button></form>
+<p class="mt-3"><a href="/">Return to Zing</a></p>
+</div></div>
+{{end}}

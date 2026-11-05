@@ -505,3 +505,10 @@ type OpenConversationRequest {
  connectionId string
  recipient string
 }
+
+type InstallationStatus {
+ configured bool
+ private bool
+ ownerClaimEnabled bool
+ ownerClaimed bool
+}

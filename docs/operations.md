@@ -28,7 +28,7 @@ Take encrypted PostgreSQL backups (including job/session rows) and object-storag
 
 Keep the previous application image/binary. Deploy additive migrations before traffic switch, check /readyz, then roll forward. On application failure, route traffic to the previous binary while preserving compatible database state; never automatically run destructive down migrations. Reconcile in-flight publication jobs before restoring a backup or resuming workers.
 
-No production host, domain, SMTP credentials, object bucket or approved Threads app was supplied during implementation. Those are operator configuration dependencies, not simulated app features.
+The owner selected lidza-deploy.albaspot.com and zing.albaspot.com for a private instance. Other installers choose their own host and domain. Authenticated deployment access, initial infrastructure and provider approvals remain installation requirements; see docs/self-hosting.md.
 
 ## GitHub Actions installation
 

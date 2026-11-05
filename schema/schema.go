@@ -1458,3 +1458,17 @@ func (v OpenConversationRequest) Validate() error {
 	}
 	return errs.Result()
 }
+
+// InstallationStatus is an API type.
+type InstallationStatus struct {
+	Configured        bool `json:"configured"`
+	Private           bool `json:"private"`
+	OwnerClaimEnabled bool `json:"ownerClaimEnabled"`
+	OwnerClaimed      bool `json:"ownerClaimed"`
+}
+
+// Validate applies the rules of InstallationStatus from schema.lidza.
+func (v InstallationStatus) Validate() error {
+	var errs validate.Errors
+	return errs.Result()
+}

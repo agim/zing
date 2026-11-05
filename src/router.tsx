@@ -6,6 +6,7 @@ import {
   type RouterHistory,
 } from "@tanstack/react-router";
 import { Zing } from "./Zing";
+import { Setup } from "./Setup";
 import { Privacy, Terms } from "./Legal";
 import { RouteError } from "./ErrorBoundary";
 export const rootRoute = createRootRoute({ component: Outlet });
@@ -18,6 +19,11 @@ const paths = [
   "/reset",
 ] as const;
 const routeTree = rootRoute.addChildren([
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/setup",
+    component: Setup,
+  }),
   ...paths.map((path) =>
     createRoute({ getParentRoute: () => rootRoute, path, component: Zing }),
   ),

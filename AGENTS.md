@@ -34,7 +34,7 @@ facts in `docs/notes.md`, reasons in `docs/decisions.md`, area notes in `docs/`.
 <!-- lidza:agreements -->
 From the brief (docs/brief.md); follow them in every session.
 
-- Pushing: Implement in agim/zing. Initial application commit on main; completed modules pass verification before push. Public production deployment awaits host and provider configuration.
+- Pushing: Commit and push completed modules to agim/zing main after verification. Regular tests run at feature/module completion and full release boundaries. Keep repository public; deployment instance privacy is configured independently.
 <!-- /lidza:agreements -->
 
 ## Team notes

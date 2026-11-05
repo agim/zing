@@ -1,0 +1,2 @@
+:root,[data-bs-theme=light]{--admin-accent:#0085f3;--admin-accent-fg:#fff;--admin-bg:#f7f8fa;--admin-surface:#fff;--admin-surface-2:#f3f5f8;--admin-line:#e9ebef;--admin-fg:#15171b;--admin-muted:#626773;--admin-sidebar:#101114;--admin-font:system-ui,-apple-system,"Segoe UI",sans-serif;--admin-mono:ui-monospace,monospace;--admin-radius:10px}
+[data-bs-theme=dark]{--admin-accent:#51adff;--admin-accent-fg:#101114;--admin-bg:#101114;--admin-surface:#17191d;--admin-surface-2:#202329;--admin-line:#292c33;--admin-fg:#f7f8fa;--admin-muted:#a1a7b2;--admin-sidebar:#101114}

@@ -24,7 +24,8 @@ RUN go mod download
 COPY package.json package-lock.json* ./
 RUN npm ci --no-fund --no-audit || npm install --no-fund --no-audit
 COPY . .
-RUN mkdir -p db mail admin config && lidza build --out /out/zing
+RUN mkdir -p db mail admin config && lidza build --out /out/zing \
+ && go build -o /out/zing-healthcheck ./cmd/healthcheck
 
 # Runtime: the binary and what it reads from disk: the migrations (applied
 # with DB_MIGRATE=true or `lidza db migrate`), the mail templates (mail/),
@@ -43,6 +44,7 @@ WORKDIR /app
 # with a read-only root filesystem (docker run --read-only) to keep the
 # app from changing them.
 COPY --from=build --chown=65532:65532 /out/zing /app/zing
+COPY --from=build --chown=65532:65532 /out/zing-healthcheck /app/zing-healthcheck
 COPY --from=build --chown=65532:65532 /src/db /app/db
 COPY --from=build --chown=65532:65532 /src/mail /app/mail
 COPY --from=build --chown=65532:65532 /src/admin /app/admin

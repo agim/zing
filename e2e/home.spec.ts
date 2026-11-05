@@ -150,3 +150,27 @@ test("verified account sees honest empty states and can switch themes on mobile"
   ).toBeVisible();
   await expectNoSidewaysScroll(page);
 });
+
+test("first-run page uses installation status and does not expose credentials", async ({
+  page,
+}) => {
+  await page.goto("/setup");
+  await expect(
+    page.getByRole("heading", { name: "Your own little world." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "1. Create your operator account" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute(
+    "type",
+    "password",
+  );
+  await expect(
+    page.getByText(
+      "Settings and credentials are saved encrypted in PostgreSQL.",
+      { exact: false },
+    ),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoSidewaysScroll(page);
+});

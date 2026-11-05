@@ -2,9 +2,12 @@ package app
 
 import (
 	"context"
+	"embed"
+	"github.com/agim/lidza"
 	"github.com/agim/lidza/packs/cache"
 	"net/http"
 	"time"
+	"zing/internal/installation"
 
 	"github.com/agim/lidza/packs/admin"
 	"github.com/agim/lidza/packs/auth"
@@ -18,14 +21,18 @@ import (
 	"zing/schema"
 )
 
+//go:embed admin
+var adminFiles embed.FS
+
 func routes(r *router.Router) {
+	router.Route(r, "GET /api/v1/installation", installation.Status)
 	router.Route(r, "GET /api/v1/hello/{name}", hello)
 	r.HandleFunc("GET /oauth-client-metadata.json", social.BlueskyMetadata)
 	r.HandleFunc("GET /api/v1/connections/bluesky/callback", social.BlueskyCallback)
-	auth.Mount(r, auth.Options{Title: "Zing", RequireVerified: true, VerifyPath: "/verify", ResetPath: "/reset", OnDeleteUser: deleteUser})
-	admin.Mount(r, admin.Options{Title: "Zing"})
+	auth.Mount(r, auth.Options{Title: "Zing", RequireVerified: true, VerifyPath: "/verify", ResetPath: "/reset", OnDeleteUser: deleteUser, OnSignUp: installation.SignUp})
+	admin.Mount(r, admin.Options{Title: "Zing", Templates: lidza.Sub(adminFiles, "admin"), Sections: installation.Sections(), Pages: []admin.Page{installation.Page()}})
 	r.HandleFunc("GET /api/v1/connections/callback", social.Callback)
-	g := r.Group("/api/v1", auth.Require(), verifiedOnly, accountLimit)
+	g := r.Group("/api/v1", auth.Require(), verifiedOnly, installation.Access, accountLimit)
 	router.Route(g, "GET /api/v1/connections", social.Connections)
 	router.Route(g, "POST /api/v1/connections", social.Connect)
 	router.Route(g, "DELETE /api/v1/connections/{id}", social.Disconnect)
