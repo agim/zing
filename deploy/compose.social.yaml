@@ -1,0 +1,49 @@
+# Merge with compose.yaml. Supply these infra secrets in .env.production;
+# configure optional SMTP/AppView/PDS storage choices in .env.pds.production.
+services:
+  app:
+    environment:
+      ZING_ACTIVITYPUB_URL: https://${ZING_ACTIVITYPUB_DOMAIN:?set ZING_ACTIVITYPUB_DOMAIN}
+      ZING_ACTIVITYPUB_AGENT_URL: http://activitypub:8091
+      ZING_ACTIVITYPUB_AGENT_TOKEN: ${ZING_ACTIVITYPUB_AGENT_TOKEN:?set ZING_ACTIVITYPUB_AGENT_TOKEN}
+      ZING_PDS_URL: https://${ZING_PDS_DOMAIN:?set ZING_PDS_DOMAIN}
+      ZING_PDS_ADMIN_PASSWORD: ${PDS_ADMIN_PASSWORD:?set PDS_ADMIN_PASSWORD}
+      ZING_PDS_HANDLE_DOMAIN: ${ZING_PDS_DOMAIN:?set ZING_PDS_DOMAIN}
+      ZING_PDS_READ_MODE: ${ZING_PDS_READ_MODE:-local}
+  activitypub:
+    build: ../services/activitypub
+    restart: unless-stopped
+    environment:
+      ZING_ACTIVITYPUB_DOMAIN: ${ZING_ACTIVITYPUB_DOMAIN:?set ZING_ACTIVITYPUB_DOMAIN}
+      ZING_AGENT_TOKEN: ${ZING_ACTIVITYPUB_AGENT_TOKEN:?set ZING_ACTIVITYPUB_AGENT_TOKEN}
+    ports: ['127.0.0.1:8081:8080']
+    volumes: ['activitypub:/data']
+    healthcheck:
+      test: ['CMD', 'python3', '-c', 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8080/readyz",timeout=3)']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+  pds:
+    build: ../services/pds
+    restart: unless-stopped
+    env_file: ../.env.pds.production
+    environment:
+      PDS_HOSTNAME: ${ZING_PDS_DOMAIN:?set ZING_PDS_DOMAIN}
+      PDS_ADMIN_PASSWORD: ${PDS_ADMIN_PASSWORD:?set PDS_ADMIN_PASSWORD}
+      PDS_JWT_SECRET: ${PDS_JWT_SECRET:?set PDS_JWT_SECRET}
+      PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX: ${PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX:?set PDS_PLC_ROTATION_KEY_K256_PRIVATE_KEY_HEX}
+      PDS_DID_PLC_URL: https://plc.directory
+      PDS_INVITE_REQUIRED: 'true'
+      PDS_DEV_MODE: 'false'
+      PDS_RATE_LIMITS_ENABLED: 'true'
+      LOG_ENABLED: 'false'
+    ports: ['127.0.0.1:2583:2583']
+    volumes: ['pds:/pds']
+    healthcheck:
+      test: ['CMD', 'node', '-e', 'fetch("http://127.0.0.1:2583/xrpc/_health").then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+volumes:
+  activitypub:
+  pds:

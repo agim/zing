@@ -1,0 +1,9 @@
+# Use alongside the existing Zing origin. Each protocol has its own domain.
+{$ZING_ACTIVITYPUB_DOMAIN} {
+  reverse_proxy 127.0.0.1:8081
+}
+# Requires wildcard DNS/TLS if offering user handles on subdomains; see upstream
+# PDS documentation and your DNS provider's Caddy TLS module for wildcard certs.
+{$ZING_PDS_DOMAIN} {
+  reverse_proxy 127.0.0.1:2583
+}
