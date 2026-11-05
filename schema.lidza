@@ -247,6 +247,7 @@ model MailMessage @table("mail_message") {
 
 // Zing application data. Owner fields are always derived from the session.
 model SocialConnection {
+ hosted bool @default(false)
  syncedAt time?
  id uuid @id @default(uuid())
  ownerId string @index
@@ -284,6 +285,7 @@ model Draft {
  updatedAt time @default(now())
 }
 model Delivery {
+ recordKey string?
  id uuid @id @default(uuid())
  ownerId string @index
  draftId uuid @index
@@ -296,6 +298,7 @@ model Delivery {
  attempts int @default(0)
  updatedAt time @default(now())
  @@unique(draftId, connectionId)
+ @@unique(connectionId, recordKey)
 }
 model Media {
  id uuid @id @default(uuid())
@@ -313,6 +316,7 @@ type ConnectionInput {
  appPassword string @max(255)
 }
 type ConnectionView {
+ hosted bool
  id string
  network string
  server string
@@ -512,4 +516,42 @@ type InstallationStatus {
  private bool
  ownerClaimEnabled bool
  ownerClaimed bool
+}
+
+// Hosted identities belong to this installation; provider credentials stay sealed.
+model HostedIdentity {
+ id uuid @id @default(uuid())
+ ownerId string @index
+ network string
+ username string
+ server string
+ handle string @default("")
+ subject string @default("")
+ passwordSealed text
+ state string @default("pending")
+ error text @default("")
+ createdAt time @default(now())
+ @@unique(ownerId, network)
+ @@unique(network, username)
+}
+type HostedIdentityRequest {
+ network string @min(1) @max(20)
+ username string @min(1) @max(30)
+}
+type HostedIdentityView {
+ id string
+ network string
+ username string
+ handle string
+ state string
+ error string
+}
+type HostedNetworkView {
+ network string
+ available bool
+ domain string
+}
+type HostingStatus {
+ networks HostedNetworkView[]
+ identities HostedIdentityView[]
 }

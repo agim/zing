@@ -33,3 +33,7 @@ The owner selected lidza-deploy.albaspot.com and zing.albaspot.com for a private
 ## GitHub Actions installation
 
 The repository connection used for the initial push cannot create workflow files (GitHub requires the OAuth `workflow` scope). The full release/PR configuration is retained at `deploy/github-ci.yml`. An account with workflow-write permission can copy it to `.github/workflows/ci.yml`. Local Līdza verification and browser tests remain the release gate in the meantime.
+
+## Hosted server acceptance
+
+This installation also owns ActivityPub and PDS identities. Follow `social-servers.md` for companion service startup, immutable identity domains, backend backups, deletion jobs and actual isolated federation acceptance. The current `lidza.stack.json` covers the Zing application infrastructure; deploy its companion servers independently and configure their origins/secrets, or use the prepared Compose overlay. It does not yet install all protocol services through Līdza Deploy automatically. The current Node-service dependency audit findings and unverified container deployment block a public release; passing client/browser tests alone does not clear those holds.

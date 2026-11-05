@@ -25,6 +25,8 @@ For an empty disposable/local instance only, `python3 scripts/bootstrap-local.py
 
 The app listens on 127.0.0.1:3000, SMTP on 127.0.0.1:1025, and the inbox on 127.0.0.1:8025. These services intentionally bind only to loopback. Messages persist under `.lidza/local-mail/`; media persists under the configured storage directory; accounts, drafts, schedules and settings persist in the local PostgreSQL database. The master key remains at `config/master.key` and must be preserved to reopen encrypted settings.
 
-You can write and save drafts before connecting a social account. Publishing/scheduling requires a supported connected destination. Real Mastodon and Bluesky accounts can be connected from Settings; Bluesky's app-password option supports local development without a public OAuth origin. Threads developer access and HTTPS callbacks remain provider requirements.
+For actual hosted social identities, start the companion servers with `python3 scripts/social-local.py --install --configure` in a second terminal, then restart Zing. See `social-servers.md`. The native installer currently supports Linux amd64.
+
+You can write and save drafts before creating or connecting a social account. Publishing/scheduling requires a supported connected destination. Real Mastodon and Bluesky accounts can be connected from Settings; Bluesky's app-password option supports local development without a public OAuth origin. Threads developer access and HTTPS callbacks remain provider requirements.
 
 The local SMTP inbox has no authentication because it is development-only and loopback-only. Do not expose it through a public proxy, use it for external mail delivery, or include local-access files, master keys, messages or environment files in source archives.

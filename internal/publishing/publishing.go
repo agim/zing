@@ -15,11 +15,14 @@ import (
 	"github.com/agim/lidza/packs/jobs"
 	"github.com/agim/lidza/packs/storage"
 	"github.com/agim/lidza/pkg/router"
+	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/jackc/pgx/v5"
 	"zing/internal/providers"
 	"zing/internal/social"
 	"zing/schema"
 )
+
+var recordClock = syntax.NewTIDClock(0)
 
 type payload struct{ Owner, Delivery string }
 
@@ -342,6 +345,12 @@ func run(ctx context.Context, raw json.RawMessage) error {
 		}
 		return tx.Commit(ctx)
 	}
+	publicationKey := p.Delivery
+	if s.Network == "bluesky" {
+		if e = tx.QueryRow(ctx, `UPDATE delivery SET record_key=coalesce(record_key,$3) WHERE owner_id=$1 AND id::text=$2 RETURNING record_key`, p.Owner, p.Delivery, recordClock.Next().String()).Scan(&publicationKey); e != nil {
+			return e
+		}
+	}
 	_, e = tx.Exec(ctx, `UPDATE delivery SET state='sending',attempts=attempts+1,updated_at=now() WHERE owner_id=$1 AND id::text=$2`, p.Owner, p.Delivery)
 	if e != nil {
 		return e
@@ -388,7 +397,7 @@ func run(ctx context.Context, raw json.RawMessage) error {
 	if e != nil {
 		return finish(ctx, p, "failed", "Relay parent is unavailable", providers.Ref{}, "")
 	}
-	ref, remote, e := s.Publish(ctx, text, p.Delivery, &in, images)
+	ref, remote, e := s.Publish(ctx, text, publicationKey, &in, images)
 	if e != nil {
 		status, message := "uncertain", "Network outcome could not be confirmed. Check the destination before retrying."
 		var h *router.HTTPError

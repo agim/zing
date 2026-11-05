@@ -3,6 +3,7 @@ package providers
 import (
 	"context"
 	"encoding/json"
+	"github.com/bluesky-social/indigo/atproto/syntax"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -118,5 +119,83 @@ func TestThreadsImagesUseExplicitPrivateObjectLinks(t *testing.T) {
 	ref, _, e := s.Publish(context.Background(), "Image post", "key", nil, []Image{{SourceURL: "https://objects.example/signed-image", Alt: "A garden"}})
 	if e != nil || ref.URI != "post" || !created || !published {
 		t.Fatalf("image publication %v %+v %v %v", e, ref, created, published)
+	}
+}
+
+func TestBlueskyPublicationReusesValidRecordKeyAndTimestamp(t *testing.T) {
+	var first string
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/xrpc/com.atproto.repo.putRecord" {
+			t.Error("unexpected publication endpoint")
+		}
+		var body map[string]any
+		if e := json.NewDecoder(r.Body).Decode(&body); e != nil {
+			t.Error(e)
+		}
+		key, ok := body["rkey"].(string)
+		if !ok {
+			t.Error("missing key")
+		}
+		if _, e := syntax.ParseTID(key); e != nil {
+			t.Error("invalid protocol record key", e)
+		}
+		raw, e := json.Marshal(body)
+		if e != nil {
+			t.Error(e)
+		}
+		if first == "" {
+			first = string(raw)
+		} else if first != string(raw) {
+			t.Error("retry changed key or record content")
+		}
+		calls++
+		if _, e = w.Write([]byte(`{"uri":"at://did:plc:me/app.bsky.feed.post/3mb3xf3c22222","cid":"fixture-cid"}`)); e != nil {
+			t.Error(e)
+		}
+	}))
+	defer server.Close()
+	s := Session{Network: "bluesky", Server: server.URL, Subject: "did:plc:me", Handle: "me.test", Access: "fixture", Client: server.Client(), LocalView: true}
+	for i := 0; i < 2; i++ {
+		if _, remote, e := s.Publish(context.Background(), "A durable post", "3mb3xf3c22222", nil, nil); e != nil {
+			t.Fatal(e)
+		} else if !strings.HasPrefix(remote, server.URL+"/xrpc/com.atproto.repo.getRecord?") {
+			t.Fatal("local PDS publication points at a public Bluesky app")
+		}
+	}
+	if calls != 2 {
+		t.Fatal("publication not exercised twice")
+	}
+	if _, _, e := s.Publish(context.Background(), "Invalid key", "zing-uuid", nil, nil); e == nil {
+		t.Fatal("non-TID record key accepted")
+	}
+}
+
+func TestHostedTransportCannotFollowOrRequestAnotherOrigin(t *testing.T) {
+	var contacted bool
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { contacted = true; w.WriteHeader(200) }))
+	defer target.Close()
+	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, target.URL, http.StatusFound) }))
+	defer source.Close()
+	t.Setenv("ZING_ACTIVITYPUB_URL", source.URL)
+	client, e := HostedClient(source.URL)
+	if e != nil {
+		t.Fatal(e)
+	}
+	response, e := client.Get(source.URL)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = response.Body.Close(); e != nil {
+		t.Fatal(e)
+	}
+	if response.StatusCode != 302 || contacted {
+		t.Fatal("hosted redirect followed")
+	}
+	if _, e = client.Get(target.URL); e == nil || contacted {
+		t.Fatal("hosted client left its configured origin")
+	}
+	if _, e = HostedClient(target.URL); e == nil {
+		t.Fatal("unconfigured private origin accepted")
 	}
 }

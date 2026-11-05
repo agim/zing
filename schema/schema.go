@@ -417,6 +417,7 @@ func (v MailMessage) Validate() error {
 
 // SocialConnection is a row of the social_connection table.
 type SocialConnection struct {
+	Hosted        bool       `json:"hosted" db:"hosted"`
 	SyncedAt      *time.Time `json:"syncedAt" db:"synced_at"`
 	ID            string     `json:"id" db:"id"`
 	OwnerID       string     `json:"ownerId" db:"owner_id"`
@@ -525,6 +526,7 @@ func (v Draft) Validate() error {
 
 // Delivery is a row of the delivery table.
 type Delivery struct {
+	RecordKey    *string   `json:"recordKey" db:"record_key"`
 	ID           string    `json:"id" db:"id"`
 	OwnerID      string    `json:"ownerId" db:"owner_id"`
 	DraftID      string    `json:"draftId" db:"draft_id"`
@@ -616,6 +618,54 @@ func (v OAuthData) Validate() error {
 	return errs.Result()
 }
 
+// HostedIdentity is a row of the hosted_identity table.
+type HostedIdentity struct {
+	ID             string    `json:"id" db:"id"`
+	OwnerID        string    `json:"ownerId" db:"owner_id"`
+	Network        string    `json:"network" db:"network"`
+	Username       string    `json:"username" db:"username"`
+	Server         string    `json:"server" db:"server"`
+	Handle         string    `json:"handle" db:"handle"`
+	Subject        string    `json:"subject" db:"subject"`
+	PasswordSealed string    `json:"passwordSealed" db:"password_sealed"`
+	State          string    `json:"state" db:"state"`
+	Error          string    `json:"error" db:"error"`
+	CreatedAt      time.Time `json:"createdAt" db:"created_at"`
+}
+
+// Validate applies the rules of HostedIdentity from schema.lidza.
+func (v HostedIdentity) Validate() error {
+	var errs validate.Errors
+	if v.OwnerID == "" {
+		errs.Add("ownerId", "required", "required")
+	}
+	if v.Network == "" {
+		errs.Add("network", "required", "required")
+	}
+	if v.Username == "" {
+		errs.Add("username", "required", "required")
+	}
+	if v.Server == "" {
+		errs.Add("server", "required", "required")
+	}
+	if v.Handle == "" {
+		errs.Add("handle", "required", "required")
+	}
+	if v.Subject == "" {
+		errs.Add("subject", "required", "required")
+	}
+	if v.PasswordSealed == "" {
+		errs.Add("passwordSealed", "required", "required")
+	}
+	if v.State == "" {
+		errs.Add("state", "required", "required")
+	}
+	if v.Error == "" {
+		errs.Add("error", "required", "required")
+	}
+	return errs.Result()
+}
+
 // Greeting is an API type.
 type Greeting struct {
 	Name    string `json:"name"`
@@ -683,6 +733,7 @@ func (v ConnectionInput) Validate() error {
 
 // ConnectionView is an API type.
 type ConnectionView struct {
+	Hosted       bool     `json:"hosted"`
 	ID           string   `json:"id"`
 	Network      string   `json:"network"`
 	Server       string   `json:"server"`
@@ -1474,5 +1525,112 @@ type InstallationStatus struct {
 // Validate applies the rules of InstallationStatus from schema.lidza.
 func (v InstallationStatus) Validate() error {
 	var errs validate.Errors
+	return errs.Result()
+}
+
+// HostedIdentityRequest is an API type.
+type HostedIdentityRequest struct {
+	Network  string `json:"network"`
+	Username string `json:"username"`
+}
+
+// Validate applies the rules of HostedIdentityRequest from schema.lidza.
+func (v HostedIdentityRequest) Validate() error {
+	var errs validate.Errors
+	if v.Network == "" {
+		errs.Add("network", "required", "required")
+	}
+	if len(v.Network) < 1 {
+		errs.Add("network", "min", "at least 1 character(s)")
+	}
+	if len(v.Network) > 20 {
+		errs.Add("network", "max", "at most 20 character(s)")
+	}
+	if v.Username == "" {
+		errs.Add("username", "required", "required")
+	}
+	if len(v.Username) < 1 {
+		errs.Add("username", "min", "at least 1 character(s)")
+	}
+	if len(v.Username) > 30 {
+		errs.Add("username", "max", "at most 30 character(s)")
+	}
+	return errs.Result()
+}
+
+// HostedIdentityView is an API type.
+type HostedIdentityView struct {
+	ID       string `json:"id"`
+	Network  string `json:"network"`
+	Username string `json:"username"`
+	Handle   string `json:"handle"`
+	State    string `json:"state"`
+	Error    string `json:"error"`
+}
+
+// Validate applies the rules of HostedIdentityView from schema.lidza.
+func (v HostedIdentityView) Validate() error {
+	var errs validate.Errors
+	if v.ID == "" {
+		errs.Add("id", "required", "required")
+	}
+	if v.Network == "" {
+		errs.Add("network", "required", "required")
+	}
+	if v.Username == "" {
+		errs.Add("username", "required", "required")
+	}
+	if v.Handle == "" {
+		errs.Add("handle", "required", "required")
+	}
+	if v.State == "" {
+		errs.Add("state", "required", "required")
+	}
+	if v.Error == "" {
+		errs.Add("error", "required", "required")
+	}
+	return errs.Result()
+}
+
+// HostedNetworkView is an API type.
+type HostedNetworkView struct {
+	Network   string `json:"network"`
+	Available bool   `json:"available"`
+	Domain    string `json:"domain"`
+}
+
+// Validate applies the rules of HostedNetworkView from schema.lidza.
+func (v HostedNetworkView) Validate() error {
+	var errs validate.Errors
+	if v.Network == "" {
+		errs.Add("network", "required", "required")
+	}
+	if v.Domain == "" {
+		errs.Add("domain", "required", "required")
+	}
+	return errs.Result()
+}
+
+// HostingStatus is an API type.
+type HostingStatus struct {
+	Networks   []HostedNetworkView  `json:"networks"`
+	Identities []HostedIdentityView `json:"identities"`
+}
+
+// Validate applies the rules of HostingStatus from schema.lidza.
+func (v HostingStatus) Validate() error {
+	var errs validate.Errors
+	for _, x := range v.Networks {
+		if err := x.Validate(); err != nil {
+			errs.Add("networks", "nested", err.Error())
+			break
+		}
+	}
+	for _, x := range v.Identities {
+		if err := x.Validate(); err != nil {
+			errs.Add("identities", "nested", err.Error())
+			break
+		}
+	}
 	return errs.Result()
 }

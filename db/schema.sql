@@ -199,6 +199,7 @@ CREATE INDEX mail_message_status_idx ON mail_message (status);
 CREATE INDEX mail_message_created_at_idx ON mail_message (created_at);
 
 CREATE TABLE social_connection (
+  hosted boolean NOT NULL DEFAULT false,
   synced_at timestamptz,
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id text NOT NULL,
@@ -242,6 +243,7 @@ CREATE TABLE draft (
 CREATE INDEX draft_owner_id_idx ON draft (owner_id);
 
 CREATE TABLE delivery (
+  record_key text,
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id text NOT NULL,
   draft_id uuid NOT NULL,
@@ -257,6 +259,7 @@ CREATE TABLE delivery (
 CREATE INDEX delivery_owner_id_idx ON delivery (owner_id);
 CREATE INDEX delivery_draft_id_idx ON delivery (draft_id);
 CREATE UNIQUE INDEX delivery_draft_id_connection_id_key ON delivery (draft_id, connection_id);
+CREATE UNIQUE INDEX delivery_connection_id_record_key_key ON delivery (connection_id, record_key);
 
 CREATE TABLE media (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -275,4 +278,21 @@ CREATE TABLE o_auth_data (
   expires_at timestamptz NOT NULL
 );
 CREATE INDEX o_auth_data_owner_id_idx ON o_auth_data (owner_id);
+
+CREATE TABLE hosted_identity (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id text NOT NULL,
+  network text NOT NULL,
+  username text NOT NULL,
+  server text NOT NULL,
+  handle text NOT NULL DEFAULT '',
+  subject text NOT NULL DEFAULT '',
+  password_sealed text NOT NULL,
+  state text NOT NULL DEFAULT 'pending',
+  error text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX hosted_identity_owner_id_idx ON hosted_identity (owner_id);
+CREATE UNIQUE INDEX hosted_identity_owner_id_network_key ON hosted_identity (owner_id, network);
+CREATE UNIQUE INDEX hosted_identity_network_username_key ON hosted_identity (network, username);
 

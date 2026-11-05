@@ -72,17 +72,17 @@ func SaveConnection(ctx context.Context, owner string, s providers.Session) erro
 }
 func Connections(ctx context.Context, req *router.Request[router.None]) (schema.ConnectionList, error) {
 	out := schema.ConnectionList{Items: []schema.ConnectionView{}}
-	rows, e := db.From(ctx).Query(ctx, `SELECT id::text,network,server,subject,handle,reconnect FROM social_connection WHERE owner_id=$1 ORDER BY created_at`, Owner(ctx))
+	rows, e := db.From(ctx).Query(ctx, `SELECT id::text,network,server,subject,handle,reconnect,hosted FROM social_connection WHERE owner_id=$1 ORDER BY created_at`, Owner(ctx))
 	if e != nil {
 		return out, e
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var c schema.ConnectionView
-		if e = rows.Scan(&c.ID, &c.Network, &c.Server, &c.Subject, &c.Handle, &c.Reconnect); e != nil {
+		if e = rows.Scan(&c.ID, &c.Network, &c.Server, &c.Subject, &c.Handle, &c.Reconnect, &c.Hosted); e != nil {
 			return out, e
 		}
-		c.Capabilities = Capabilities(c.Network)
+		c.Capabilities = ConnectionCapabilities(c.Network, c.Hosted)
 		out.Items = append(out.Items, c)
 	}
 	return out, rows.Err()
@@ -90,12 +90,42 @@ func Connections(ctx context.Context, req *router.Request[router.None]) (schema.
 func Load(ctx context.Context, owner, id string) (providers.Session, error) {
 	var s providers.Session
 	var a, r string
-	e := db.From(ctx).QueryRow(ctx, `SELECT network,server,subject,handle,access_sealed,refresh_sealed,expires_at FROM social_connection WHERE owner_id=$1 AND id::text=$2 AND NOT reconnect`, owner, id).Scan(&s.Network, &s.Server, &s.Subject, &s.Handle, &a, &r, &s.ExpiresAt)
+	e := db.From(ctx).QueryRow(ctx, `SELECT network,server,subject,handle,access_sealed,refresh_sealed,expires_at,hosted FROM social_connection WHERE owner_id=$1 AND id::text=$2 AND NOT reconnect`, owner, id).Scan(&s.Network, &s.Server, &s.Subject, &s.Handle, &a, &r, &s.ExpiresAt, &s.Hosted)
 	if errors.Is(e, pgx.ErrNoRows) {
 		return s, router.NotFound("Connection")
 	}
 	if e != nil {
 		return s, e
+	}
+	if s.Hosted {
+		s.Client, e = providers.HostedClient(s.Server)
+		if e != nil {
+			return s, e
+		}
+		if s.Network == "bluesky" {
+			values, readErr := env.Values(".")
+			if readErr != nil {
+				return s, readErr
+			}
+			s.LocalView = values["ZING_PDS_READ_MODE"] != "appview"
+			rows, err := db.From(ctx).Query(ctx, `SELECT subject,handle FROM hosted_identity WHERE network='bluesky' AND state='active' AND server=$1 ORDER BY created_at LIMIT 100`, s.Server)
+			if err != nil {
+				return s, err
+			}
+			for rows.Next() {
+				var actor providers.HostedActor
+				if err = rows.Scan(&actor.DID, &actor.Handle); err != nil {
+					rows.Close()
+					return s, err
+				}
+				s.Actors = append(s.Actors, actor)
+			}
+			err = rows.Err()
+			rows.Close()
+			if err != nil {
+				return s, err
+			}
+		}
 	}
 	s.Access, e = Open(a)
 	if e != nil {
@@ -160,6 +190,13 @@ func Disconnect(ctx context.Context, req *router.Request[router.None]) (router.N
 	}
 	if e != nil {
 		return router.None{}, e
+	}
+	var hosted bool
+	if e = tx.QueryRow(ctx, `SELECT hosted FROM social_connection WHERE owner_id=$1 AND id::text=$2`, Owner(ctx), req.Param("id")).Scan(&hosted); e != nil {
+		return router.None{}, e
+	}
+	if hosted {
+		return router.None{}, router.Errorf(409, "This identity is hosted here. It cannot be disconnected like an external account.")
 	}
 	if network == "bluesky" {
 		if _, e = tx.Exec(ctx, `DELETE FROM o_auth_data WHERE owner_id=$1 AND starts_with(id,$2)`, Owner(ctx), Owner(ctx)+":session:"+subject+":"); e != nil {
@@ -355,4 +392,12 @@ func setting(name string) string {
 		return ""
 	}
 	return values[name]
+}
+
+func ConnectionCapabilities(network string, hosted bool) []string {
+	values, readErr := env.Values(".")
+	if hosted && network == "bluesky" && (readErr != nil || values["ZING_PDS_READ_MODE"] != "appview") {
+		return []string{"feed", "search", "profile", "follow", "like", "repost", "reply", "publish", "images", "block"}
+	}
+	return Capabilities(network)
 }

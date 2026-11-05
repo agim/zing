@@ -2,7 +2,7 @@
 
 Your world, connected. Zing is intended to be a self-hosted social platform with a Go + Līdza application and React/TypeScript frontend, using the supplied Zing logos and #0085F3 brand palette.
 
-**Implementation status:** The current app connects existing social accounts. Hosted social identities and server-side federation are missing; the locally running client is not the completed platform. See `docs/server-scope.md` for the corrected scope.
+Zing hosts social identities through pinned GoToSocial and Bluesky PDS backends, alongside optional external-account connections. See `docs/social-servers.md` for local startup, protocol boundaries and deployment. The local PDS view is not a global Bluesky AppView or chat service.
 
 Private interactive design: https://zing-design-agim.albaspot.chatgpt.site (sample data only). Its complete source is retained in `design/dist`; production uses `src/` and Go handlers.
 

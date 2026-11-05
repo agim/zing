@@ -68,3 +68,11 @@ Why: PostgreSQL owns user data, durable delivery states, transactional job enque
 ## 2026-11-05: Admin page First-run setup
 
 Why: Only a claimed/authorized operator configures instance-wide origin, private/public access, mail, storage and optional Threads credentials. Values are sealed in PostgreSQL through the framework store. The page summarizes no users social data and never reveals saved secrets.
+
+## 2026-11-05: Established social servers behind Zing
+
+Why: The owner selected established ActivityPub and Bluesky PDS servers rather than a native Go protocol implementation. GoToSocial 0.22.3 supplies ActivityPub, signatures, relationships, timelines, moderation and deliveries. The reference PDS 0.5.51 supplies identity, repository signing, blobs, authentication and synchronization. Its dependency lock is retained from the official PDS service, avoiding incompatible transitive versions encountered with an unconstrained npm install. Zing remains a separate Go/Līdza application; upstream code is not patched.
+
+Local development uses the upstream PLC package with its own PostgreSQL database and loopback-only listeners. Production uses the public PLC directory. Local PDS views read actual repository records and are labeled as local; optional AppView reads and native chat are separate capabilities. Provisioning reservations and generated passwords are persisted before remote creation, tokens are sealed, and retries reconcile the same identity. A backend-confirmed unavailable PDS name can be changed; ambiguous creation cannot silently create a replacement identity.
+
+Touches: internal/hosting, internal/providers, services, scripts/social-local.py, deploy/compose.social.yaml, schema.lidza

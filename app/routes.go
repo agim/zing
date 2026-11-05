@@ -7,6 +7,7 @@ import (
 	"github.com/agim/lidza/packs/cache"
 	"net/http"
 	"time"
+	"zing/internal/hosting"
 	"zing/internal/installation"
 
 	"github.com/agim/lidza/packs/admin"
@@ -33,6 +34,8 @@ func routes(r *router.Router) {
 	admin.Mount(r, admin.Options{Title: "Zing", Templates: lidza.Sub(adminFiles, "admin"), Sections: installation.Sections(), Pages: []admin.Page{installation.Page()}})
 	r.HandleFunc("GET /api/v1/connections/callback", social.Callback)
 	g := r.Group("/api/v1", auth.Require(), verifiedOnly, installation.Access, accountLimit)
+	router.Route(g, "GET /api/v1/hosting", hosting.Hosting)
+	router.Route(g, "POST /api/v1/hosting/identities", hosting.CreateHostedIdentity)
 	router.Route(g, "GET /api/v1/connections", social.Connections)
 	router.Route(g, "POST /api/v1/connections", social.Connect)
 	router.Route(g, "DELETE /api/v1/connections/{id}", social.Disconnect)
@@ -60,6 +63,9 @@ func routes(r *router.Router) {
 	g.Handle("GET /api/v1/realtime", realtime.Handler(realtime.Authorize(func(r *http.Request, topic string) bool { return topic == "user:"+social.Owner(r.Context()) })))
 }
 func deleteUser(ctx context.Context, tx pgx.Tx, subject string) error {
+	if e := hosting.QueueDeletion(ctx, tx, subject); e != nil {
+		return e
+	}
 	if _, e := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, subject); e != nil {
 		return e
 	}

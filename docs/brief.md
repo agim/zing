@@ -11,7 +11,7 @@ Change an answer the same way, or edit it here.
 
 ### What does the app do, in one sentence? <!-- brief:purpose -->
 
-Self-hosted Zing social platform that hosts its own users and social content, with server-side interoperability with Mastodon/ActivityPub and Bluesky/AT Protocol. Connecting existing external accounts is an additional feature, not the core product. The choice between established server backends and a native Zing federation implementation is pending the owner’s answer.
+Self-hosted Zing social platform that hosts its own users and social content, with server-side interoperability with Mastodon/ActivityPub and Bluesky/AT Protocol. Connecting existing external accounts is an additional feature, not the core product. The owner selected established open-source ActivityPub and Bluesky PDS servers behind Zing; do not implement a new federation protocol server.
 
 ### Who uses it? <!-- brief:users -->
 

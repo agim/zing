@@ -189,6 +189,15 @@ export function Zing() {
     retry: false,
   });
   const conns = connections.data?.items || [];
+  const hosting = useQuery({
+    queryKey: ["hosting", user?.subject],
+    queryFn: () => api.hosting(),
+    enabled: !!user?.verified,
+    retry: false,
+  });
+  const [hostedNetwork, setHostedNetwork] = useState("mastodon");
+  const [hostedUsername, setHostedUsername] = useState("");
+
   const feed = useQuery({
     queryKey: ["feed", user?.subject, network, search],
     queryFn: () =>
@@ -649,10 +658,14 @@ export function Zing() {
                   <p>
                     {conns.length
                       ? "Try another network or search."
-                      : "Connect your accounts and bring your conversations together."}
+                      : hosting.data?.networks.some((n) => n.available)
+                        ? "Create a hosted identity and start posting on your own server."
+                        : "Connect your accounts and bring your conversations together."}
                   </p>
                   <button className="primary" onClick={() => go("Settings")}>
-                    Connect accounts
+                    {hosting.data?.networks.some((n) => n.available)
+                      ? "Create your hosted identity"
+                      : "Connect accounts"}
                   </button>
                 </Empty>
               )}
@@ -1276,6 +1289,134 @@ export function Zing() {
                 Your accounts, your preferences, your corner of the internet.
               </p>
               <div className="card form-card">
+                <h2 className="section-title">Your hosted identities</h2>
+                <p className="meta">
+                  Create your social identity here. You can post and follow
+                  people without an account on another server.
+                </p>
+                {hosting.error && (
+                  <p role="alert">Could not load hosted identity settings.</p>
+                )}
+                {hosting.data?.identities.map((identity) => (
+                  <div className="connection" key={identity.id}>
+                    <div>
+                      <div className="name">
+                        {identity.network === "mastodon"
+                          ? "ActivityPub"
+                          : "Bluesky PDS"}
+                      </div>
+                      <div className="meta">
+                        {identity.handle || identity.username} ·{" "}
+                        {identity.state}
+                      </div>
+                      {identity.error && <p role="alert">{identity.error}</p>}
+                    </div>
+                    {identity.state === "active" && (
+                      <button
+                        className="secondary push-right"
+                        onClick={() => {
+                          const c = conns.find(
+                            (c) => c.hosted && c.network === identity.network,
+                          );
+                          setCompose({
+                            ...blank(),
+                            destinations: c ? [c.id] : [],
+                          });
+                          go("Compose");
+                        }}
+                      >
+                        Write a post
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {hosting.data?.networks.some((n) => n.available) ? (
+                  <form
+                    className="stack"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void act(async () => {
+                        await api.createHostedIdentity({
+                          network: hostedNetwork,
+                          username: hostedUsername,
+                        });
+                        setHostedUsername("");
+                        refresh("hosting");
+                        refresh("connections");
+                        refresh("feed");
+                      }, "Your hosted identity is ready.").then(() =>
+                        refresh("hosting"),
+                      );
+                    }}
+                  >
+                    <label className="field">
+                      Hosted network
+                      <select
+                        aria-label="Hosted network"
+                        value={hostedNetwork}
+                        onChange={(event) =>
+                          setHostedNetwork(event.target.value)
+                        }
+                      >
+                        {hosting.data.networks.map((n) => (
+                          <option
+                            key={n.network}
+                            value={n.network}
+                            disabled={!n.available}
+                          >
+                            {n.network === "mastodon"
+                              ? "ActivityPub"
+                              : "Bluesky PDS"}
+                            {n.available ? " · " + n.domain : " · unavailable"}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="field">
+                      Username
+                      <input
+                        required
+                        minLength={1}
+                        maxLength={30}
+                        pattern={
+                          hostedNetwork === "bluesky"
+                            ? "[a-z0-9]{1,30}"
+                            : "[a-z0-9][a-z0-9_]{0,29}"
+                        }
+                        autoCapitalize="none"
+                        autoComplete="off"
+                        value={hostedUsername}
+                        onChange={(event) =>
+                          setHostedUsername(event.target.value)
+                        }
+                      />
+                    </label>
+                    <p className="meta">
+                      One hosted identity per network. Names and identity
+                      domains are permanent. PDS posts are public repository
+                      records; local PDS hosting does not include Bluesky chat.
+                    </p>
+                    <button
+                      className="primary"
+                      disabled={
+                        busy ||
+                        !hostedUsername ||
+                        hosting.data.identities.some(
+                          (i) =>
+                            i.network === hostedNetwork && i.state === "active",
+                        )
+                      }
+                    >
+                      Create hosted identity
+                    </button>
+                  </form>
+                ) : (
+                  <p className="meta">
+                    The operator has not configured social-server hosting yet.
+                  </p>
+                )}
+              </div>
+              <div className="card form-card">
                 <h2 className="section-title">Connected accounts</h2>
                 {conns.map((c) => (
                   <div className="connection" key={c.id}>
@@ -1283,7 +1424,10 @@ export function Zing() {
                       {names[c.network]?.slice(0, 1)}
                     </span>
                     <div>
-                      <div className="name">{names[c.network]}</div>
+                      <div className="name">
+                        {names[c.network]}
+                        {c.hosted ? " · Hosted here" : ""}
+                      </div>
                       <div className="meta">
                         @{c.handle}
                         {c.reconnect ? " · Reconnect needed" : ""}
@@ -1291,7 +1435,7 @@ export function Zing() {
                     </div>
                     <button
                       className="secondary push-right"
-                      disabled={busy}
+                      disabled={busy || c.hosted}
                       onClick={() => {
                         if (
                           window.confirm(
@@ -1304,7 +1448,7 @@ export function Zing() {
                           }, "Account disconnected");
                       }}
                     >
-                      Disconnect
+                      {c.hosted ? "Hosted here" : "Disconnect"}
                     </button>
                   </div>
                 ))}
@@ -1364,7 +1508,7 @@ export function Zing() {
                     disabled={busy}
                     onClick={() => {
                       const password = window.prompt(
-                        "Enter your password to permanently delete your Zing account. Published network posts remain there.",
+                        "Enter your password to delete your Zing account and request deletion of identities hosted here. Posts on independently connected accounts remain there.",
                       );
                       if (password)
                         void act(async () => {
@@ -1416,12 +1560,15 @@ export function Zing() {
               conns.map((c) => <ConnectionRow key={c.id} connection={c} />)
             ) : (
               <p className="subtitle small">
-                Your conversations belong together. Start by connecting an
-                account.
+                Create your identity here, then follow people and start a
+                conversation.
               </p>
             )}
             <button className="secondary full" onClick={() => go("Settings")}>
-              <Icon name="Plus" /> Connect an account
+              <Icon name="Plus" />{" "}
+              {hosting.data?.networks.some((n) => n.available)
+                ? "Manage identities"
+                : "Connect an account"}
             </button>
           </div>
           <div className="card right-card">
@@ -1572,7 +1719,10 @@ function ConnectionRow({ connection: c }: { connection: ConnectionView }) {
         {names[c.network]?.slice(0, 1)}
       </span>
       <div>
-        <div className="name small">{names[c.network]}</div>
+        <div className="name small">
+          {names[c.network]}
+          {c.hosted ? " · Hosted here" : ""}
+        </div>
         <div className="meta">@{c.handle}</div>
       </div>
       <span className={c.reconnect ? "pill" : "dot"}>

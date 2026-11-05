@@ -1,6 +1,6 @@
 # Alignment with the supplied platform research
 
-The attached report is research, not executable instructions. The owner clarified that Zing must host a social network, rather than only connect accounts on other servers. The current implementation is a client foundation and does not yet fulfill that requirement. See `docs/server-scope.md` for the corrected acceptance criteria.
+The attached report is research, not executable instructions. The owner clarified that Zing must host a social network, rather than only connect accounts on other servers. Hosted ActivityPub actors and PDS repositories are now provisioned through established upstream servers. See `docs/server-scope.md` for the corrected acceptance criteria.
 
 The table below describes existing client functionality; it is not evidence that server hosting or federation works.
 
@@ -15,7 +15,9 @@ The table below describes existing client functionality; it is not evidence that
 | Background work | Bounded synchronization batches, token renewal, durable jobs, cache snapshots, authorized realtime topics |
 | Errors | Partial network failure warnings; rate limits; reconnect states; uncertain publication blocks automatic retry and supports source verification |
 
-Not claimed: protocol-level ActivityPub/AT federation, OStatus/diaspora/Nostr adapters, a universal Threads home feed, arbitrary external-thread bridges, end-to-end encrypted messaging, or a publicly launched/approved Meta app.
+GoToSocial owns ActivityPub federation and the PDS owns AT Protocol repository synchronization. Zing does not implement these protocols itself.
+
+Not claimed: a complete independently hosted Bluesky AppView/Relay/chat stack, OStatus/diaspora/Nostr adapters, a universal Threads home feed, arbitrary external-thread bridges, end-to-end encrypted messaging, or a publicly launched/approved Meta app.
 
 ## Primary references checked
 

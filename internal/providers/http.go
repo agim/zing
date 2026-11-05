@@ -79,7 +79,12 @@ func Client() *http.Client {
 }
 
 // Session is server-only. Never return or log this type.
+type HostedActor struct{ DID, Handle string }
+
 type Session struct {
+	Hosted                                            bool
+	LocalView                                         bool
+	Actors                                            []HostedActor
 	Auth                                              func(*http.Request) (*http.Response, error)
 	Proxy                                             string
 	Network, Server, Subject, Handle, Access, Refresh string

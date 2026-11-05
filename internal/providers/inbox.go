@@ -10,6 +10,9 @@ import (
 
 func (s Session) Notifications(ctx context.Context) ([]schema.NotificationView, error) {
 	items := []schema.NotificationView{}
+	if s.LocalView && s.Network == "bluesky" {
+		return items, Unsupported()
+	}
 	switch s.Network {
 	case "mastodon":
 		var list []struct {
@@ -52,6 +55,9 @@ func (s Session) Notifications(ctx context.Context) ([]schema.NotificationView, 
 func (s Session) chat() Session { c := s; c.Proxy = "did:web:api.bsky.chat#bsky_chat"; return c }
 func (s Session) Conversations(ctx context.Context) ([]schema.ConversationView, error) {
 	items := []schema.ConversationView{}
+	if s.LocalView && s.Network == "bluesky" {
+		return items, Unsupported()
+	}
 	switch s.Network {
 	case "mastodon":
 		var list []struct {
@@ -108,6 +114,9 @@ func (s Session) Messages(ctx context.Context, id string) ([]schema.MessageView,
 	if s.Network == "mastodon" && strings.HasPrefix(id, "new:") {
 		return items, nil
 	}
+	if s.LocalView && s.Network == "bluesky" {
+		return items, Unsupported()
+	}
 	switch s.Network {
 	case "mastodon":
 		var root MPost
@@ -155,6 +164,9 @@ func (s Session) Messages(ctx context.Context, id string) ([]schema.MessageView,
 	return items, nil
 }
 func (s Session) SendMessage(ctx context.Context, in schema.MessageInput) error {
+	if s.LocalView && s.Network == "bluesky" {
+		return Unsupported()
+	}
 	switch s.Network {
 	case "bluesky":
 		return s.chat().Do(ctx, "POST", "/xrpc/chat.bsky.convo.sendMessage", map[string]any{"convoID": in.ConversationID, "message": map[string]string{"text": in.Text}}, nil)
@@ -209,6 +221,9 @@ func (s Session) SendMessage(ctx context.Context, in schema.MessageInput) error 
 }
 
 func (s Session) OpenConversation(ctx context.Context, recipient string) (schema.ConversationView, error) {
+	if s.LocalView && s.Network == "bluesky" {
+		return schema.ConversationView{}, Unsupported()
+	}
 	if s.Network == "bluesky" {
 		var result struct {
 			Convo struct {

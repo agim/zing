@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/agim/lidza/pkg/router"
+	"github.com/bluesky-social/indigo/atproto/syntax"
 	"golang.org/x/net/html"
 	"zing/schema"
 )
@@ -140,6 +141,9 @@ func (p BPost) View() schema.SocialPost {
 	return out
 }
 func (s Session) Feed(ctx context.Context, cursor, query string) (schema.FeedPage, error) {
+	if s.LocalView && s.Network == "bluesky" {
+		return s.hostedFeed(ctx, cursor, query)
+	}
 	out := schema.FeedPage{Items: []schema.SocialPost{}, Warnings: []string{}}
 	switch s.Network {
 	case "mastodon":
@@ -216,6 +220,9 @@ func (s Session) Feed(ctx context.Context, cursor, query string) (schema.FeedPag
 	return out, Unsupported()
 }
 func (s Session) Profile(ctx context.Context, id string) (schema.SocialAccount, error) {
+	if s.LocalView && s.Network == "bluesky" {
+		return s.hostedProfile(ctx, id)
+	}
 	switch s.Network {
 	case "mastodon":
 		var p MAccount
@@ -261,6 +268,12 @@ func (s Session) Action(ctx context.Context, in schema.ActionInput) error {
 		return s.Do(ctx, "POST", path, map[string]string{}, nil)
 	}
 	if s.Network != "bluesky" {
+		return Unsupported()
+	}
+	if s.LocalView && (in.Action == "unlike" || in.Action == "unrepost" || in.Action == "unfollow" || in.Action == "unblock") {
+		return s.hostedUndo(ctx, in)
+	}
+	if s.LocalView && (in.Action == "mute" || in.Action == "unmute") {
 		return Unsupported()
 	}
 	if in.Action == "mute" || in.Action == "unmute" {
@@ -395,7 +408,6 @@ func (s Session) upload(ctx context.Context, image Image) (json.RawMessage, erro
 	return id, e2
 }
 func (s Session) Publish(ctx context.Context, text, key string, reply *schema.ComposeInput, images []Image) (Ref, string, error) {
-	now := time.Now().UTC().Format(time.RFC3339Nano)
 	switch s.Network {
 	case "mastodon":
 		ids := []string{}
@@ -437,7 +449,11 @@ func (s Session) Publish(ctx context.Context, text, key string, reply *schema.Co
 		e = json.NewDecoder(io.LimitReader(resp.Body, 2<<20)).Decode(&p)
 		return Ref{URI: p.ID}, p.URL, e
 	case "bluesky":
-		record := map[string]any{"$type": "app.bsky.feed.post", "text": text, "createdAt": now}
+		tid, keyErr := syntax.ParseTID(key)
+		if keyErr != nil {
+			return Ref{}, "", router.Errorf(422, "A persisted AT Protocol record key is required")
+		}
+		record := map[string]any{"$type": "app.bsky.feed.post", "text": text, "createdAt": tid.Time().Format(time.RFC3339Nano)}
 		if reply != nil && reply.ReplyID != "" {
 			record["reply"] = map[string]Ref{"parent": {URI: reply.ReplyID, CID: reply.ReplyCid}, "root": {URI: reply.RootID, CID: reply.RootCid}}
 		}
@@ -453,9 +469,12 @@ func (s Session) Publish(ctx context.Context, text, key string, reply *schema.Co
 			record["embed"] = map[string]any{"$type": "app.bsky.embed.images", "images": entries}
 		}
 		// putRecord uses a stable key: reconciliation and retry cannot create a second post.
-		rkey := "zing" + strings.ReplaceAll(key, "-", "")
+		rkey := tid.String()
 		var ref Ref
 		e := s.Do(ctx, "POST", "/xrpc/com.atproto.repo.putRecord", map[string]any{"repo": s.Subject, "collection": "app.bsky.feed.post", "rkey": rkey, "record": record}, &ref)
+		if s.LocalView {
+			return ref, s.Server + "/xrpc/com.atproto.repo.getRecord?" + url.Values{"repo": {s.Subject}, "collection": {"app.bsky.feed.post"}, "rkey": {rkey}}.Encode(), e
+		}
 		return ref, "https://bsky.app/profile/" + url.PathEscape(s.Handle) + "/post/" + rkey, e
 	case "threads":
 
@@ -507,6 +526,9 @@ func (s Session) Publish(ctx context.Context, text, key string, reply *schema.Co
 
 // Post fetches a single canonical object for delivery reconciliation.
 func (s Session) Post(ctx context.Context, id string) (schema.SocialPost, error) {
+	if s.LocalView && s.Network == "bluesky" {
+		return s.hostedPost(ctx, id)
+	}
 	switch s.Network {
 	case "mastodon":
 		var p MPost
@@ -528,6 +550,19 @@ func (s Session) Post(ctx context.Context, id string) (schema.SocialPost, error)
 }
 
 func (s Session) People(ctx context.Context, query string) ([]schema.SocialAccount, error) {
+	if s.LocalView && s.Network == "bluesky" {
+		items := []schema.SocialAccount{}
+		for _, a := range s.Actors {
+			if strings.Contains(strings.ToLower(a.Handle), strings.ToLower(query)) {
+				v, e := s.hostedProfile(ctx, a.DID)
+				if e != nil {
+					return items, e
+				}
+				items = append(items, v)
+			}
+		}
+		return items, nil
+	}
 	items := []schema.SocialAccount{}
 	switch s.Network {
 	case "mastodon":

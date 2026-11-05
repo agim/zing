@@ -144,6 +144,7 @@ type AuthWorkspace struct {
 }
 
 type Delivery struct {
+	RecordKey    *string   `json:"record_key"`
 	ID           string    `json:"id"`
 	OwnerID      string    `json:"owner_id"`
 	DraftID      string    `json:"draft_id"`
@@ -169,6 +170,20 @@ type Draft struct {
 	Timezone     string     `json:"timezone"`
 	CreatedAt    time.Time  `json:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at"`
+}
+
+type HostedIdentity struct {
+	ID             string    `json:"id"`
+	OwnerID        string    `json:"owner_id"`
+	Network        string    `json:"network"`
+	Username       string    `json:"username"`
+	Server         string    `json:"server"`
+	Handle         string    `json:"handle"`
+	Subject        string    `json:"subject"`
+	PasswordSealed string    `json:"password_sealed"`
+	State          string    `json:"state"`
+	Error          string    `json:"error"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 type Job struct {
@@ -244,6 +259,7 @@ type OAuthDatum struct {
 }
 
 type SocialConnection struct {
+	Hosted        bool       `json:"hosted"`
 	SyncedAt      *time.Time `json:"synced_at"`
 	ID            string     `json:"id"`
 	OwnerID       string     `json:"owner_id"`

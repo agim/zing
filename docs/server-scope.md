@@ -6,7 +6,7 @@ On 2026-11-05 the owner clarified that Zing is supposed to be a Mastodon and Blu
 
 ## Existing foundation
 
-The current Go/Līdza app provides authentication, instance setup, encrypted settings, a branded React interface, external-account adapters, persistent drafts/media, and publication jobs. It does not provision hosted ActivityPub actors or AT Protocol repositories. Its passing client tests do not validate a social server.
+The current Go/Līdza app provides authentication, instance setup, encrypted settings, a branded React interface, external-account adapters, persistent drafts/media, and publication jobs. Hosted identity provisioning and server-backed reads/writes have now been added. Client-only tests remain insufficient evidence of federation; the isolated-server acceptance script exercises actual upstream servers.
 
 ## Required server behavior
 
@@ -19,9 +19,9 @@ The current Go/Līdza app provides authentication, instance setup, encrypted set
 - Operator controls cover registration, reports, user suspension, remote-server policies, abuse limits, failed deliveries and recovery.
 - Instance membership privacy and protocol visibility are distinct settings. Restricting Zing sign-in does not make federated public content private.
 
-## Architecture decision pending
+## Architecture decision
 
-The owner has been asked whether to run established open-source ActivityPub and PDS servers behind Zing or implement a native Go federation server. No backend has been selected or provisioned as part of this scope correction. Preserve the current app and local data until that decision is made.
+The owner selected established servers. Zing now integrates GoToSocial 0.22.3 and the reference @atproto/pds 0.5.51, retaining the Go/Līdza application as the interface and account control plane. The local PDS uses an isolated upstream PLC directory backed by PostgreSQL. See `social-servers.md` for startup, deployment and limits. Hosted network identities are provisioned separately from the Zing login and are marked as hosted in the account list.
 
 ## Acceptance sequence
 

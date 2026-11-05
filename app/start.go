@@ -7,6 +7,7 @@ import (
 	"github.com/agim/lidza/packs/jobs"
 	"github.com/agim/lidza/packs/storage"
 	"github.com/agim/lidza/pkg/middleware"
+	"zing/internal/hosting"
 	"zing/internal/installation"
 	"zing/internal/publishing"
 	"zing/internal/social"
@@ -14,6 +15,7 @@ import (
 
 func onStart(ctx context.Context, s *lidza.Services) error {
 	publishing.Register(s)
+	hosting.Register(s)
 	if e := social.RegisterSync(s); e != nil {
 		return e
 	}
