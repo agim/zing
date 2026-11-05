@@ -1,0 +1,17 @@
+{{define "content"}}
+<h2>Instance moderation</h2>
+<p>Reports stay on this Zing installation. Native server actions run durably; “applied” means the backend confirmed them. Suspension preserves content and can be reversed. Account deletion is separate.</p>
+<div class="card card-body mb-3"><h3>Hosted users</h3>
+{{range .Data.Users}}<form method="post" action="/admin/moderation/action" class="mb-3">
+<strong>{{.Name}}</strong> {{.Email}} — {{if .Suspended}}Suspended: {{.Reason}}{{else}}Active{{end}}
+<input type="hidden" name="requestKey" value="{{$.Data.RequestKey}}"><input type="hidden" name="target" value="{{.Subject}}">
+<input type="hidden" name="kind" value="{{if .Suspended}}restore{{else}}suspend{{end}}"><label>Reason <input name="reason" required maxlength="2000" class="form-control"></label><button class="btn" type="submit">{{if .Suspended}}Restore{{else}}Suspend{{end}}</button></form>{{end}}</div>
+<div class="card card-body mb-3"><h3>Reports and appeals</h3><p>A chat report contains only the message the participant explicitly selected. Evidence is shown only when opened.</p>
+{{range .Data.Reports}}<article class="mb-3"><strong>{{.Kind}} · {{.State}} · {{.Network}}</strong><p>{{.Reason}}</p><p>{{.ReporterName}} → {{.Target}}</p><a href="/admin/moderation?report={{.ID}}">Open selected evidence</a>
+{{if eq .State "open"}}<form method="post" action="/admin/moderation/resolve"><input type="hidden" name="report" value="{{.ID}}"><button class="btn">Resolve report</button></form>{{end}}
+{{if and (eq .Kind "post") .TargetOwnerID}}<form method="post" action="/admin/moderation/action"><input type="hidden" name="requestKey" value="{{$.Data.RequestKey}}"><input type="hidden" name="kind" value="remove_post"><input type="hidden" name="report" value="{{.ID}}"><label>Removal reason <input class="form-control" name="reason" required maxlength="2000"></label><button class="btn">Take down hosted post</button></form>{{end}}</article>{{else}}<p>No reports.</p>{{end}}
+{{if .Data.Evidence}}<h4>Selected evidence</h4><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{.Data.Evidence}}</pre>{{end}}</div>
+<div class="card card-body mb-3"><h3>ActivityPub domain policy</h3><form method="post" action="/admin/moderation/action"><input type="hidden" name="requestKey" value="{{.Data.RequestKey}}"><label>Domain <input name="target" class="form-control" placeholder="server.example" required></label><label>Action <select name="kind" class="form-select"><option value="block_domain">Block domain</option><option value="unblock_domain">Unblock domain</option></select></label><label>Reason <input name="reason" class="form-control" required maxlength="2000"></label><button class="btn">Queue native policy change</button></form></div>
+<div class="card card-body"><h3>Action history</h3>{{range .Data.Actions}}<p><a href="/admin/moderation?action={{.ID}}">{{.Kind}} · {{.State}}</a> — {{.Target}} · {{.Reason}}<br>{{.CreatedAt}} · moderator {{.ModeratorID}}{{if .Error}}<br>{{.Error}}{{end}}</p>{{else}}<p>No actions.</p>{{end}}
+{{range .Data.Destinations}}<p>{{.Network}}: {{.State}} {{.Error}}</p>{{end}}</div>
+{{end}}

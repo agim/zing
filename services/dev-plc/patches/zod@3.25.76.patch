@@ -1,0 +1,26 @@
+diff --git a/v3/helpers/parseUtil.cjs b/v3/helpers/parseUtil.cjs
+index 36cf2d83395453921f034956b9e2b8c66aba92c4..1c9eec1432ca0f210ae4b44880daeec095abb2e2 100644
+--- a/v3/helpers/parseUtil.cjs
++++ b/v3/helpers/parseUtil.cjs
+@@ -38,6 +38,8 @@ const makeIssue = (params) => {
+ exports.makeIssue = makeIssue;
+ exports.EMPTY_PATH = [];
+ function addIssueToContext(ctx, issueData) {
++    // Bound hostile collection error retention (GHSA-mrhx-c7xc-m3w5).
++    if (ctx.common.issues.length >= 64) return;
+     const overrideMap = (0, errors_js_1.getErrorMap)();
+     const issue = (0, exports.makeIssue)({
+         issueData: issueData,
+diff --git a/v3/helpers/parseUtil.js b/v3/helpers/parseUtil.js
+index 91b2afb81b4358fb84d637bc963a868517c6a516..c9e268d6da884a63b3b8e258c2f74d69b89e7df5 100644
+--- a/v3/helpers/parseUtil.js
++++ b/v3/helpers/parseUtil.js
+@@ -30,6 +30,8 @@ export const makeIssue = (params) => {
+ };
+ export const EMPTY_PATH = [];
+ export function addIssueToContext(ctx, issueData) {
++    // Bound hostile collection error retention (GHSA-mrhx-c7xc-m3w5).
++    if (ctx.common.issues.length >= 64) return;
+     const overrideMap = getErrorMap();
+     const issue = makeIssue({
+         issueData: issueData,

@@ -433,6 +433,10 @@ type NotificationList {
  warnings string[]
 }
 type ConversationView {
+ canAccept bool
+ service string
+ pending bool
+ canReply bool
  id string
  connectionId string
  network string
@@ -446,15 +450,21 @@ type ConversationList {
  warnings string[]
 }
 type MessageView {
+ senderDid string
  id string
  sender string
  text string
  createdAt string
 }
 type MessageList {
+ canAccept bool
+ cursor string
+ service string
+ canReply bool
  items MessageView[]
 }
 type MessageInput {
+ clientId string
  connectionId string
  conversationId string
  text string @min(1) @max(1000)
@@ -554,4 +564,143 @@ type HostedNetworkView {
 type HostingStatus {
  networks HostedNetworkView[]
  identities HostedIdentityView[]
+}
+
+// Hostile image decoding runs in a bounded Rust/WASM pack.
+type ImageGuardInput {
+ data string @min(1) @max(12000000)
+}
+type ImageGuardOutput {
+ data string
+ mime string
+ width int
+ height int
+}
+
+// Public AT Protocol records are indexed separately from private preferences.
+model AtRecord {
+ uri string @id
+ did string @index
+ collection string @index
+ cid string
+ value json
+ text text @default("")
+ subject string @default("")
+ createdAt time
+ indexedAt time @default(now())
+ scanId string
+}
+model AtSyncState {
+ startedAt time @default(now())
+ id string @id
+ did string @index
+ collection string
+ cursor string @default("")
+ scanId string
+ completedAt time?
+ error text @default("")
+}
+model AtPreference {
+ id uuid @id @default(uuid())
+ ownerId string @index
+ did string
+ target string
+ kind string
+ @@unique(ownerId, did, target, kind)
+}
+model AtNotification {
+ id string @id
+ recipient string @index
+ actor string
+ kind string
+ recordUri string
+ postUri string @default("")
+ createdAt time
+ readAt time?
+}
+
+model ChatConversation {
+ id uuid @id @default(uuid())
+ pairKey string @unique
+ initiatedBy string
+ state string @default("pending")
+ updatedAt time @default(now())
+}
+model ChatMember {
+ id uuid @id @default(uuid())
+ conversationId uuid @index
+ ownerId string @index
+ did string
+ lastReadAt time?
+ @@unique(conversationId, ownerId)
+}
+model ChatMessage {
+ id uuid @id @default(uuid())
+ conversationId uuid @index
+ senderId string @index
+ senderDid string
+ clientId string
+ textSealed text
+ createdAt time @default(now())
+ @@unique(conversationId, senderId, clientId)
+}
+model ModerationAccount {
+ ownerId string @id
+ suspended bool @default(false)
+ reason text @default("")
+ updatedAt time @default(now())
+}
+model ModerationReport {
+ kind string @default("account")
+ id uuid @id @default(uuid())
+ reporterId string @index
+ network string
+ target string
+ targetOwnerId string @default("")
+ reason text
+ evidenceSealed text @default("")
+ state string @default("open")
+ createdAt time @default(now())
+}
+model ModerationAction {
+ requestKey uuid @unique @default(uuid())
+ id uuid @id @default(uuid())
+ moderatorId string
+ kind string
+ network string
+ target string
+ reason text
+ state string @default("pending")
+ error text @default("")
+ createdAt time @default(now())
+}
+model BackendCredential {
+ id string @id
+ server string @unique
+ passwordSealed text
+ accessSealed text @default("")
+}
+
+type ReportRequest {
+ kind string @min(1) @max(20)
+ connectionId string @min(1)
+ target string @min(1) @max(2048)
+ reason string @min(1) @max(2000)
+ messageId string? @max(100)
+}
+type ChatAcceptRequest {
+ connectionId string
+}
+
+model ModerationDestination {
+ id uuid @id @default(uuid())
+ actionId uuid @index
+ network string
+ state string @default("pending")
+ error text @default("")
+ @@unique(actionId, network)
+}
+
+type AppealRequest {
+ reason string @min(1) @max(2000)
 }

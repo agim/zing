@@ -21,7 +21,7 @@ The current Go/Līdza app provides authentication, instance setup, encrypted set
 
 ## Architecture decision
 
-The owner selected established servers. Zing now integrates GoToSocial 0.22.3 and the reference @atproto/pds 0.5.51, retaining the Go/Līdza application as the interface and account control plane. The local PDS uses an isolated upstream PLC directory backed by PostgreSQL. See `social-servers.md` for startup, deployment and limits. Hosted network identities are provisioned separately from the Zing login and are marked as hosted in the account list.
+The owner selected established servers. Zing now integrates GoToSocial 0.22.3 and the reference @atproto/pds 0.5.52, retaining the Go/Līdza application as the interface and account control plane. The local PDS uses an isolated upstream PLC directory backed by PostgreSQL. See `social-servers.md` for startup, deployment and limits. Hosted network identities are provisioned separately from the Zing login and are marked as hosted in the account list.
 
 ## Acceptance sequence
 
@@ -35,3 +35,5 @@ The owner selected established servers. Zing now integrates GoToSocial 0.22.3 an
 
 - Mastodon ActivityPub interoperability: https://docs.joinmastodon.org/spec/activitypub/
 - AT Protocol hosting and the distinction between PDS, Relay and AppView: https://atproto.com/guides/self-hosting
+
+Local community acceptance now covers real hosted publication/actions, PostgreSQL feed indexing, consented Zing chat, native moderation, domain policy and suspended-account erasure. Reconnect/render acceptance runs on desktop and phone. External-network acceptance and container deployment remain separate release gates.

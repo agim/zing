@@ -7,7 +7,10 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sqlite3
 import threading
+import time
+import uuid
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -55,6 +58,21 @@ def command(action, data):
         raise Conflict("Backend account needs operator reconciliation")
 
 
+def restart_backend():
+    nonce = str(uuid.uuid4())
+    request = ROOT.parent / "restart-request"
+    temporary = request.with_suffix(".tmp")
+    temporary.write_text(nonce)
+    os.chmod(temporary, 0o600)
+    os.replace(temporary, request)
+    for _ in range(200):
+        ack = ROOT.parent / "restart-ack"
+        if ack.exists() and ack.read_text() == nonce:
+            return
+        time.sleep(0.2)
+    raise RuntimeError("Backend restart was not confirmed")
+
+
 def provision(data):
     if not re.fullmatch(r"[a-z0-9_]{1,30}", data.get("username", "")):
         raise ValueError("Invalid username")
@@ -73,12 +91,24 @@ def provision(data):
         raise ValueError("Invalid service password")
     path = ROOT / (data["id"] + ".json")
     with LOCK:
-        identity = {"username": data["username"], "email": data["email"]}
+        identity = {
+            "username": data["username"],
+            "email": data["email"],
+            "administrator": data.get("administrator") is True,
+        }
         if path.exists():
             saved = json.loads(path.read_text())
-            if any(saved[k] != v for k, v in identity.items()):
+            # The original operation owns its identity; retain older stored
+            # aliases across upgrades until the explicit erasure scrub.
+            if saved.get("username") == data["username"] and saved.get("email"):
+                data["email"] = saved["email"]
+                identity["email"] = saved["email"]
+            if any(
+                saved.get(k, False if k == "administrator" else None) != v
+                for k, v in identity.items()
+            ):
                 raise Conflict("Operation identity changed")
-            if saved["state"] == "creating":
+            if saved["state"] in ["creating", "deleted"]:
                 raise Conflict(
                     "An interrupted creation requires operator reconciliation"
                 )
@@ -97,6 +127,9 @@ def provision(data):
                 os.fsync(f.fileno())
             os.replace(tmp, path)
         command("confirm", data)
+        if data.get("administrator") is True:
+            command("promote", data)
+            restart_backend()
     opener = urllib.request.build_opener(
         urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()), SameOrigin()
     )
@@ -119,7 +152,9 @@ def provision(data):
         with opener.open(req, timeout=20) as r:
             return r.read().decode()
 
-    scope = "read write follow"
+    scope = "read write follow" + (
+        " admin:read admin:write" if data.get("administrator") is True else ""
+    )
     app = json.loads(
         call(
             "/api/v1/apps",
@@ -193,7 +228,13 @@ class Agent(BaseHTTPRequestHandler):
         self.wfile.write(raw)
 
     def do_POST(self):
-        if self.path != "/provision":
+        if self.path not in [
+            "/provision",
+            "/account-state",
+            "/account-exists",
+            "/account-erased",
+            "/forget",
+        ]:
             self.send_error(404)
             return
         if not hmac.compare_digest(
@@ -202,11 +243,108 @@ class Agent(BaseHTTPRequestHandler):
             self.respond(401, {"error": "Unauthorized"})
             return
         try:
+            self.connection.settimeout(15)
             size = int(self.headers.get("Content-Length", "0"))
             if not 0 < size <= 4096:
                 raise ValueError("Invalid payload size")
             data = json.loads(self.rfile.read(size))
-            result = provision(data)
+            if self.path == "/provision":
+                result = provision(data)
+            elif self.path == "/account-state":
+                if data.get("action") not in ["disable", "enable"] or not re.fullmatch(
+                    r"[a-z0-9_]{1,30}", data.get("username", "")
+                ):
+                    raise ValueError("Invalid account action")
+                if data["username"] == "zingmoderator":
+                    raise ValueError("Protected service identity")
+                with LOCK:
+                    command(data["action"], data)
+                    restart_backend()
+                result = {"ok": True}
+            elif self.path == "/account-erased":
+                if not re.fullmatch(
+                    r"[0-9a-f-]{36}", data.get("id", "")
+                ) or not re.fullmatch(r"[a-z0-9_]{1,30}", data.get("username", "")):
+                    raise ValueError("Invalid erasure identity")
+                with LOCK:
+                    journal = ROOT / (data["id"] + ".json")
+                    if (
+                        not journal.exists()
+                        or json.loads(journal.read_text()).get("username")
+                        != data["username"]
+                    ):
+                        raise ValueError("Erasure operation does not own this identity")
+                    config = json.loads(Path(CONFIG).read_text())
+                    if config.get("db-type") != "sqlite":
+                        raise RuntimeError(
+                            "Native erasure verification requires the configured SQLite backend"
+                        )
+                    connection = sqlite3.connect(config["db-address"], timeout=10)
+                    try:
+                        row = connection.execute(
+                            "SELECT a.suspended_at,a.suspension_origin,u.id,u.email,u.unconfirmed_email FROM accounts a JOIN users u ON u.account_id=a.id WHERE a.id=? AND a.username=? AND (a.domain IS NULL OR a.domain='')",
+                            (data["subject"], data["username"]),
+                        ).fetchone()
+                        erased = row is not None and row[0] is not None and bool(row[1])
+                        changed = False
+                        if erased:
+                            # Native Delete stubbifies the actor LAST, after removing
+                            # content/tokens. Stable 0.22.3 intentionally retains email;
+                            # redact only this verified tombstone, never an active user.
+                            alias = "deleted+" + data["id"] + "@accounts.invalid"
+                            changed = row[3] != alias or bool(row[4])
+                            if changed:
+                                connection.execute(
+                                    "UPDATE users SET email=?,unconfirmed_email='' WHERE id=?",
+                                    (alias, row[2]),
+                                )
+                                connection.commit()
+                    finally:
+                        connection.close()
+                    if changed:
+                        restart_backend()
+                result = {"erased": erased}
+            elif self.path == "/account-exists":
+                if not re.fullmatch(r"[a-z0-9_]{1,30}", data.get("username", "")):
+                    raise ValueError("Invalid username")
+                process = subprocess.run(
+                    [BINARY, "--config-path", CONFIG, "admin", "account", "list"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    timeout=30,
+                )
+                if process.returncode:
+                    raise RuntimeError("Account inspection failed")
+                result = {
+                    "exists": any(
+                        line.split()[0] == data["username"]
+                        for line in process.stdout.decode().splitlines()
+                        if line.split()
+                    )
+                }
+            else:
+                if not re.fullmatch(r"[0-9a-f-]{36}", data.get("id", "")):
+                    raise ValueError("Invalid operation ID")
+                path = ROOT / (data["id"] + ".json")
+                with LOCK:
+                    if path.exists():
+                        previous = json.loads(path.read_text())
+                        if previous.get("username") != data.get("username"):
+                            raise ValueError("Operation identity changed")
+                        # The Go worker confirms upstream erasure before scrubbing PII.
+                        temporary = path.with_suffix(".tmp")
+                        fd = os.open(
+                            temporary, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0o600
+                        )
+                        with os.fdopen(fd, "w") as file:
+                            json.dump(
+                                {"state": "deleted", "username": previous["username"]},
+                                file,
+                            )
+                            file.flush()
+                            os.fsync(file.fileno())
+                        os.replace(temporary, path)
+                result = {"ok": True}
             self.respond(200, result)
         except (ValueError, KeyError, TypeError):
             self.respond(422, {"error": "Invalid provisioning request"})
@@ -221,7 +359,7 @@ class Agent(BaseHTTPRequestHandler):
             self.respond(
                 502,
                 {
-                    "error": "Hosted account could not be provisioned; retry with the same operation"
+                    "error": "Backend operation could not be confirmed; retry the same operation"
                 },
             )
 

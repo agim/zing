@@ -13,7 +13,8 @@
     "lidza/mail",
     "lidza/cache",
     "lidza/realtime",
-    "lidza/storage"
+    "lidza/storage",
+    "media_guard"
   ],
   "sdk": {},
   "deploy": {},

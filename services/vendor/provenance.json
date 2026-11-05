@@ -1,0 +1,10 @@
+{
+  "source": "https://github.com/did-method-plc/did-method-plc",
+  "commit": "29f1a70ee9f6f80a25946cac103b2f745e371334",
+  "license": "MIT",
+  "build": "Unbundled upstream TypeScript source, built with pinned dependencies; source and license included in archives. Runtime dependency security pins/backports live in each consuming service.",
+  "artifacts": {
+    "plc-lib-29f1a70.tgz": "cd79134068b4736f15321b5a63f725c9274583f6e52adf1fdca366c309f601d0",
+    "plc-server-29f1a70.tgz": "9551e3da0b9f92e3113eb02b348bbd2f4966aac51214cc562041c5e41b188d92"
+  }
+}

@@ -8,6 +8,49 @@ import (
 	"time"
 )
 
+type AtNotification struct {
+	ID        string     `json:"id"`
+	Recipient string     `json:"recipient"`
+	Actor     string     `json:"actor"`
+	Kind      string     `json:"kind"`
+	RecordUri string     `json:"record_uri"`
+	PostUri   string     `json:"post_uri"`
+	CreatedAt time.Time  `json:"created_at"`
+	ReadAt    *time.Time `json:"read_at"`
+}
+
+type AtPreference struct {
+	ID      string `json:"id"`
+	OwnerID string `json:"owner_id"`
+	Did     string `json:"did"`
+	Target  string `json:"target"`
+	Kind    string `json:"kind"`
+}
+
+type AtRecord struct {
+	Uri        string    `json:"uri"`
+	Did        string    `json:"did"`
+	Collection string    `json:"collection"`
+	Cid        string    `json:"cid"`
+	Value      []byte    `json:"value"`
+	Text       string    `json:"text"`
+	Subject    string    `json:"subject"`
+	CreatedAt  time.Time `json:"created_at"`
+	IndexedAt  time.Time `json:"indexed_at"`
+	ScanID     string    `json:"scan_id"`
+}
+
+type AtSyncState struct {
+	StartedAt   time.Time  `json:"started_at"`
+	ID          string     `json:"id"`
+	Did         string     `json:"did"`
+	Collection  string     `json:"collection"`
+	Cursor      string     `json:"cursor"`
+	ScanID      string     `json:"scan_id"`
+	CompletedAt *time.Time `json:"completed_at"`
+	Error       string     `json:"error"`
+}
+
 type AuthAccount struct {
 	Subject     string     `json:"subject"`
 	Label       *string    `json:"label"`
@@ -143,6 +186,39 @@ type AuthWorkspace struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type BackendCredential struct {
+	ID             string `json:"id"`
+	Server         string `json:"server"`
+	PasswordSealed string `json:"password_sealed"`
+	AccessSealed   string `json:"access_sealed"`
+}
+
+type ChatConversation struct {
+	ID          string    `json:"id"`
+	PairKey     string    `json:"pair_key"`
+	InitiatedBy string    `json:"initiated_by"`
+	State       string    `json:"state"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type ChatMember struct {
+	ID             string     `json:"id"`
+	ConversationID string     `json:"conversation_id"`
+	OwnerID        string     `json:"owner_id"`
+	Did            string     `json:"did"`
+	LastReadAt     *time.Time `json:"last_read_at"`
+}
+
+type ChatMessage struct {
+	ID             string    `json:"id"`
+	ConversationID string    `json:"conversation_id"`
+	SenderID       string    `json:"sender_id"`
+	SenderDid      string    `json:"sender_did"`
+	ClientID       string    `json:"client_id"`
+	TextSealed     string    `json:"text_sealed"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
 type Delivery struct {
 	RecordKey    *string   `json:"record_key"`
 	ID           string    `json:"id"`
@@ -239,6 +315,47 @@ type Medium struct {
 	ContentType string    `json:"content_type"`
 	Alt         string    `json:"alt"`
 	CreatedAt   time.Time `json:"created_at"`
+}
+
+type ModerationAccount struct {
+	OwnerID   string    `json:"owner_id"`
+	Suspended bool      `json:"suspended"`
+	Reason    string    `json:"reason"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type ModerationAction struct {
+	RequestKey  string    `json:"request_key"`
+	ID          string    `json:"id"`
+	ModeratorID string    `json:"moderator_id"`
+	Kind        string    `json:"kind"`
+	Network     string    `json:"network"`
+	Target      string    `json:"target"`
+	Reason      string    `json:"reason"`
+	State       string    `json:"state"`
+	Error       string    `json:"error"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type ModerationDestination struct {
+	ID       string `json:"id"`
+	ActionID string `json:"action_id"`
+	Network  string `json:"network"`
+	State    string `json:"state"`
+	Error    string `json:"error"`
+}
+
+type ModerationReport struct {
+	Kind           string    `json:"kind"`
+	ID             string    `json:"id"`
+	ReporterID     string    `json:"reporter_id"`
+	Network        string    `json:"network"`
+	Target         string    `json:"target"`
+	TargetOwnerID  string    `json:"target_owner_id"`
+	Reason         string    `json:"reason"`
+	EvidenceSealed string    `json:"evidence_sealed"`
+	State          string    `json:"state"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 type OAuthAttempt struct {

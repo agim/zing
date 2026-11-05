@@ -1,8 +1,8 @@
 # Zing
 
-Your world, connected. Zing is intended to be a self-hosted social platform with a Go + Līdza application and React/TypeScript frontend, using the supplied Zing logos and #0085F3 brand palette.
+Your world, connected. Zing is a self-hosted social platform with a Go + Līdza application and React/TypeScript frontend, using the supplied Zing logos and #0085F3 brand palette.
 
-Zing hosts social identities through pinned GoToSocial and Bluesky PDS backends, alongside optional external-account connections. See `docs/social-servers.md` for local startup, protocol boundaries and deployment. The local PDS view is not a global Bluesky AppView or chat service.
+Zing hosts social identities through pinned GoToSocial and Bluesky PDS backends, alongside optional external-account connections. See `docs/social-servers.md` for local startup, protocol boundaries and deployment. Local hosted Bluesky feeds use a persistent community index. Hosted identities have clearly labeled, consented Zing chat; external Bluesky accounts retain native DMs. Operator moderation changes the actual hosted servers. A global Bluesky AppView/Relay remains a separate optional service.
 
 Private interactive design: https://zing-design-agim.albaspot.chatgpt.site (sample data only). Its complete source is retained in `design/dist`; production uses `src/` and Go handlers.
 
@@ -12,7 +12,7 @@ Use Līdza Deploy, Docker, or your own host/domain. Open `/setup` to claim the o
 
 ## Develop
 
-Install the Līdza CLI at the version in go.mod, then run:
+Install the Līdza CLI at the version in go.mod and Rust 1.99.1 with the `wasm32-wasip1` target for the contained media pack, then run:
 
 ```sh
 lidza doctor
@@ -34,6 +34,8 @@ lidza test              # at feature/module completion
 lidza verify --full     # before version release/commit
 lidza test --e2e        # browser release checks
 lidza build            # bin/zing with embedded frontend
+python3 scripts/verify-service-security.py # installed companion dependency checks
+python3 scripts/verify-agent-security.py   # native erasure privacy regression
 ```
 
 See `docs/platform-alignment.md` for implemented network behavior and limits, `docs/operations.md` for deployment, backups, rollback and the public-launch gate, and `docs/brief.md` for the agreed scope. This repository contains the application implementation; live provider acceptance and public deployment still require operator-owned accounts and infrastructure.

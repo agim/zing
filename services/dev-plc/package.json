@@ -1,5 +1,29 @@
 {
+  "name": "zing-local-plc",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.1",
   "dependencies": {
-    "@did-plc/server": "0.0.1"
+    "@did-plc/server": "file:../vendor/plc-server-29f1a70.tgz"
+  },
+  "pnpm": {
+    "overrides": {
+      "kysely": "0.28.19",
+      "zod": "3.25.76",
+      "@opentelemetry/instrumentation-pg": "0.77.0",
+      "@opentelemetry/propagator-jaeger": "2.12.0",
+      "ajv": "8.20.0",
+      "axios": "1.21.0",
+      "body-parser": "2.4.0",
+      "follow-redirects": "1.16.2",
+      "form-data": "4.0.6",
+      "qs": "6.17.1",
+      "ws": "8.22.1",
+      "@did-plc/lib": "file:../vendor/plc-lib-29f1a70.tgz",
+      "@opentelemetry/api": "1.9.1"
+    },
+    "patchedDependencies": {
+      "zod@3.25.76": "patches/zod@3.25.76.patch"
+    }
   }
 }

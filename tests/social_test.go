@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"image"
+	"image/png"
 	"io"
 	"net/http"
 	"strings"
@@ -99,8 +101,11 @@ func TestAuthorizationOwnershipAndMedia(t *testing.T) {
 		t.Fatal("credential stored in plaintext")
 	}
 	// Real private media upload; another owner cannot fetch it.
-	data := []byte{137, 80, 78, 71, 13, 10, 26, 10}
-	data = append(data, make([]byte, 512)...)
+	var validPNG bytes.Buffer
+	if err := png.Encode(&validPNG, image.NewRGBA(image.Rect(0, 0, 2, 2))); err != nil {
+		t.Fatal(err)
+	}
+	data := validPNG.Bytes()
 	req, e := http.NewRequest("PUT", s.URL+"/api/v1/media", bytes.NewReader(data))
 	if e != nil {
 		t.Fatal(e)

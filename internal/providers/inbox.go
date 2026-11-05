@@ -11,7 +11,10 @@ import (
 func (s Session) Notifications(ctx context.Context) ([]schema.NotificationView, error) {
 	items := []schema.NotificationView{}
 	if s.LocalView && s.Network == "bluesky" {
-		return items, Unsupported()
+		if s.View == nil {
+			return items, Unsupported()
+		}
+		return s.View.Notifications(ctx)
 	}
 	switch s.Network {
 	case "mastodon":

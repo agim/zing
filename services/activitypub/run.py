@@ -51,6 +51,40 @@ try:
     )
     children.append(subprocess.Popen(["python3", "/service/agent.py"]))
     while all(p.poll() is None for p in children):
+        request = root / "restart-request"
+        ack = root / "restart-ack"
+        if request.exists() and (
+            not ack.exists() or ack.read_text() != request.read_text()
+        ):
+            nonce = request.read_text()
+            old = children[0]
+            old.terminate()
+            old.wait(timeout=20)
+            children[0] = subprocess.Popen(
+                [
+                    "/gotosocial/gotosocial",
+                    "--config-path",
+                    "/data/config.json",
+                    "server",
+                    "start",
+                ],
+                env=dict(os.environ, GIN_MODE="release"),
+            )
+            import urllib.request
+
+            for _ in range(100):
+                try:
+                    with urllib.request.urlopen(
+                        "http://127.0.0.1:8080/readyz", timeout=1
+                    ) as response:
+                        if response.status == 200:
+                            break
+                except OSError:
+                    time.sleep(0.2)
+            else:
+                raise SystemExit("ActivityPub restart failed readiness")
+            ack.write_text(nonce)
+            os.chmod(ack, 0o600)
         time.sleep(0.5)
     raise SystemExit("An ActivityPub service stopped")
 except KeyboardInterrupt:

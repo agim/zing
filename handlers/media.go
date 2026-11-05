@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"github.com/agim/lidza/packs/db"
 	"github.com/agim/lidza/packs/storage"
 	"github.com/agim/lidza/pkg/router"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"strings"
 	"zing/internal/social"
+	"zing/packs/media_guard"
 	"zing/schema"
 )
 
@@ -27,6 +29,15 @@ func UploadMedia(ctx context.Context, req *router.Request[router.File]) (schema.
 	if content != "image/png" && content != "image/jpeg" && content != "image/webp" && content != "image/gif" {
 		return out, router.Errorf(422, "Upload a PNG, JPEG, WebP, or GIF")
 	}
+	normalized, err := media_guard.From(ctx).SanitizeImage(ctx, schema.ImageGuardInput{Data: base64.StdEncoding.EncodeToString(data)})
+	if err != nil {
+		return out, router.Errorf(422, "Image could not be decoded safely. Use a valid still PNG, JPEG, WebP or GIF within the image limits.")
+	}
+	data, e = base64.StdEncoding.DecodeString(normalized.Data)
+	if e != nil {
+		return out, e
+	}
+	content = normalized.Mime
 	id := uuid.NewString()
 	key := "users/" + social.Owner(ctx) + "/media/" + id
 	_, e = storage.From(ctx).Put(ctx, key, bytes.NewReader(data), storage.PutOptions{ContentType: content})

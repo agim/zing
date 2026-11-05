@@ -1,37 +1,65 @@
-import { useEffect } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
-// useLive keeps queries fresh from the realtime pack: every message on one
-// of the topics invalidates the queries whose key starts with that topic,
-// so a component using useQuery({ queryKey: ['posts'] }) refetches when
-// the server publishes to "posts". Needs `lidza pack add realtime` and
-// the endpoint registered in routes.go; reconnects with backoff.
-export function useLive(topics: string[]) {
-  const queryClient = useQueryClient()
-  const key = topics.join(',')
+// Events contain invalidation hints only. Bodies remain behind owner-scoped APIs.
+// Catch up on every connection, retain cached values on failed reads, and cancel
+// every timer/socket on account changes or an explicit pause.
+export function useUserLive(owner: string | undefined, paused: boolean) {
+  const client = useQueryClient();
   useEffect(() => {
-    if (!key) return
-    let socket: WebSocket | undefined
-    let closed = false
-    let delay = 1000
+    if (!owner || paused) return;
+    let socket: WebSocket | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let stopped = false;
+    let delay = 1000;
+    const refresh = () => {
+      for (const key of [
+        "feed",
+        "notifications",
+        "messages",
+        "conversations",
+        "deliveries",
+        "hosting",
+      ]) {
+        void client.invalidateQueries({ queryKey: [key] });
+      }
+    };
     const connect = () => {
-      const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-      socket = new WebSocket(`${proto}://${location.host}/api/v1/realtime?topics=${encodeURIComponent(key)}`)
-      socket.onmessage = (event) => {
-        const message = JSON.parse(String(event.data)) as { topic: string }
-        queryClient.invalidateQueries({ queryKey: [message.topic] })
-        delay = 1000
-      }
+      if (
+        stopped ||
+        socket?.readyState === WebSocket.OPEN ||
+        socket?.readyState === WebSocket.CONNECTING
+      )
+        return;
+      const scheme = location.protocol === "https:" ? "wss" : "ws";
+      socket = new WebSocket(
+        `${scheme}://${location.host}/api/v1/realtime?topics=${encodeURIComponent(`user:${owner}`)}`,
+      );
+      socket.onopen = () => {
+        delay = 1000;
+        refresh();
+      };
+      socket.onmessage = () => refresh();
       socket.onclose = () => {
-        if (closed) return
-        setTimeout(connect, delay)
-        delay = Math.min(delay * 2, 30000)
-      }
-    }
-    connect()
+        if (stopped) return;
+        timer = setTimeout(connect, delay);
+        delay = Math.min(delay * 2, 30000);
+      };
+      socket.onerror = () => {
+        void client.invalidateQueries({ queryKey: ["session"] });
+      };
+    };
+    const online = () => {
+      if (timer) clearTimeout(timer);
+      connect();
+    };
+    window.addEventListener("online", online);
+    connect();
     return () => {
-      closed = true
-      socket?.close()
-    }
-  }, [queryClient, key])
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      window.removeEventListener("online", online);
+      socket?.close();
+    };
+  }, [client, owner, paused]);
 }

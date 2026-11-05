@@ -47,7 +47,7 @@ def install():
         check=True,
     )
     subprocess.run(
-        ["npm", "ci", "--omit=dev", "--no-audit", "--no-fund"],
+        ["corepack", "pnpm", "install", "--prod", "--frozen-lockfile"],
         cwd=ROOT / "services/dev-plc",
         check=True,
     )
@@ -143,6 +143,7 @@ def main():
         logs.append(log)
         p = subprocess.Popen(cmd, env=dict(os.environ, **extra), stdout=log, stderr=log)
         processes.append(p)
+        return p
 
     def stop(*_):
         raise KeyboardInterrupt
@@ -152,10 +153,10 @@ def main():
     try:
         start(
             "plc",
-            ["node", "services/dev-plc/start.cjs"],
+            ["node", "services/dev-plc/start.mjs"],
             {"ZING_PLC_DATABASE_URL": plc_database},
         )
-        start(
+        gts = start(
             "gotosocial",
             [
                 str(RUNTIME / "gotosocial"),
@@ -230,6 +231,39 @@ def main():
             flush=True,
         )
         while all(p.poll() is None for p in processes):
+            request = DATA / "restart-request"
+            ack = DATA / "restart-ack"
+            if request.exists() and (
+                not ack.exists() or ack.read_text() != request.read_text()
+            ):
+                nonce = request.read_text()
+                gts.terminate()
+                gts.wait(timeout=20)
+                processes.remove(gts)
+                gts = start(
+                    "gotosocial",
+                    [
+                        str(RUNTIME / "gotosocial"),
+                        "--config-path",
+                        str(config),
+                        "server",
+                        "start",
+                    ],
+                    {"GIN_MODE": "release"},
+                )
+                for _ in range(100):
+                    try:
+                        with urllib.request.urlopen(
+                            "http://127.0.0.1:8081/readyz", timeout=1
+                        ) as response:
+                            if response.status == 200:
+                                break
+                    except OSError:
+                        time.sleep(0.2)
+                else:
+                    raise SystemExit("ActivityPub restart did not become ready")
+                ack.write_text(nonce)
+                os.chmod(ack, 0o600)
             time.sleep(0.5)
         raise SystemExit("A social service stopped; inspect .lidza/social/*.log")
     except KeyboardInterrupt:

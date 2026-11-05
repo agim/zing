@@ -4,7 +4,7 @@ The local profile runs the real Go application, PostgreSQL, persistent media sto
 
 ## First start
 
-Install the Līdza CLI version pinned in go.mod, Python 3, Node and PostgreSQL. Then:
+Install the Līdza CLI version pinned in go.mod, Python 3, Node, PostgreSQL and Rust 1.99.1 (`rustup target add wasm32-wasip1`). Then:
 
 ```sh
 lidza install
@@ -30,3 +30,5 @@ For actual hosted social identities, start the companion servers with `python3 s
 You can write and save drafts before creating or connecting a social account. Publishing/scheduling requires a supported connected destination. Real Mastodon and Bluesky accounts can be connected from Settings; Bluesky's app-password option supports local development without a public OAuth origin. Threads developer access and HTTPS callbacks remain provider requirements.
 
 The local SMTP inbox has no authentication because it is development-only and loopback-only. Do not expose it through a public proxy, use it for external mail delivery, or include local-access files, master keys, messages or environment files in source archives.
+
+The local community acceptance script uses Playwright, creates a labeled temporary hosted user, exercises native moderation/chat, erases the fixture and restores the operator’s private registration policy. Run it only against the loopback profile. `lidza settings set` from another process requires restarting the app to load the saved setting; changes made inside the operator pages are applied in the running process.

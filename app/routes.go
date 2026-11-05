@@ -7,8 +7,11 @@ import (
 	"github.com/agim/lidza/packs/cache"
 	"net/http"
 	"time"
+	"zing/internal/atview"
+	"zing/internal/chat"
 	"zing/internal/hosting"
 	"zing/internal/installation"
+	"zing/internal/moderation"
 
 	"github.com/agim/lidza/packs/admin"
 	"github.com/agim/lidza/packs/auth"
@@ -31,9 +34,12 @@ func routes(r *router.Router) {
 	r.HandleFunc("GET /oauth-client-metadata.json", social.BlueskyMetadata)
 	r.HandleFunc("GET /api/v1/connections/bluesky/callback", social.BlueskyCallback)
 	auth.Mount(r, auth.Options{Title: "Zing", RequireVerified: true, VerifyPath: "/verify", ResetPath: "/reset", OnDeleteUser: deleteUser, OnSignUp: installation.SignUp})
-	admin.Mount(r, admin.Options{Title: "Zing", Templates: lidza.Sub(adminFiles, "admin"), Sections: installation.Sections(), Pages: []admin.Page{installation.Page()}})
+	admin.Mount(r, admin.Options{Title: "Zing", Templates: lidza.Sub(adminFiles, "admin"), Sections: installation.Sections(), Pages: []admin.Page{installation.Page(), moderation.Page()}})
 	r.HandleFunc("GET /api/v1/connections/callback", social.Callback)
-	g := r.Group("/api/v1", auth.Require(), verifiedOnly, installation.Access, accountLimit)
+	appeals := r.Group("/api/v1", auth.Require(), verifiedOnly, installation.Access, accountLimit)
+	router.Route(appeals, "POST /api/v1/moderation/appeal", moderation.Appeal)
+	g := r.Group("/api/v1", auth.Require(), verifiedOnly, installation.Access, accountLimit, moderation.Require)
+	router.Route(g, "POST /api/v1/moderation/reports", report)
 	router.Route(g, "GET /api/v1/hosting", hosting.Hosting)
 	router.Route(g, "POST /api/v1/hosting/identities", hosting.CreateHostedIdentity)
 	router.Route(g, "GET /api/v1/connections", social.Connections)
@@ -43,6 +49,7 @@ func routes(r *router.Router) {
 	router.Route(g, "GET /api/v1/search", social.Search)
 	router.Route(g, "GET /api/v1/people", social.People)
 	router.Route(g, "POST /api/v1/conversations/open", social.OpenConversation)
+	router.Route(g, "POST /api/v1/conversations/{id}/accept", social.AcceptZingConversation)
 	router.Route(g, "GET /api/v1/profile", social.Profile)
 	router.Route(g, "POST /api/v1/actions", social.Action)
 	router.Route(g, "GET /api/v1/notifications", social.Notifications)
@@ -63,6 +70,15 @@ func routes(r *router.Router) {
 	g.Handle("GET /api/v1/realtime", realtime.Handler(realtime.Authorize(func(r *http.Request, topic string) bool { return topic == "user:"+social.Owner(r.Context()) })))
 }
 func deleteUser(ctx context.Context, tx pgx.Tx, subject string) error {
+	if e := moderation.DeleteOwner(ctx, tx, subject); e != nil {
+		return e
+	}
+	if e := atview.DeleteOwner(ctx, tx, subject); e != nil {
+		return e
+	}
+	if e := chat.DeleteOwner(ctx, tx, subject); e != nil {
+		return e
+	}
 	if e := hosting.QueueDeletion(ctx, tx, subject); e != nil {
 		return e
 	}
@@ -138,4 +154,12 @@ func accountLimit(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func report(ctx context.Context, req *router.Request[schema.ReportRequest]) (schema.OperationResult, error) {
+	s, e := social.Load(ctx, social.Owner(ctx), req.Body.ConnectionID)
+	if e != nil {
+		return schema.OperationResult{}, e
+	}
+	return moderation.CreateReport(ctx, social.Owner(ctx), s, req.Body)
 }

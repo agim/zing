@@ -142,7 +142,10 @@ func (p BPost) View() schema.SocialPost {
 }
 func (s Session) Feed(ctx context.Context, cursor, query string) (schema.FeedPage, error) {
 	if s.LocalView && s.Network == "bluesky" {
-		return s.hostedFeed(ctx, cursor, query)
+		if s.View == nil {
+			return schema.FeedPage{}, Unsupported()
+		}
+		return s.View.Feed(ctx, cursor, query)
 	}
 	out := schema.FeedPage{Items: []schema.SocialPost{}, Warnings: []string{}}
 	switch s.Network {
@@ -221,7 +224,10 @@ func (s Session) Feed(ctx context.Context, cursor, query string) (schema.FeedPag
 }
 func (s Session) Profile(ctx context.Context, id string) (schema.SocialAccount, error) {
 	if s.LocalView && s.Network == "bluesky" {
-		return s.hostedProfile(ctx, id)
+		if s.View == nil {
+			return schema.SocialAccount{}, Unsupported()
+		}
+		return s.View.Profile(ctx, id)
 	}
 	switch s.Network {
 	case "mastodon":
@@ -337,7 +343,11 @@ func (s Session) Action(ctx context.Context, in schema.ActionInput) error {
 	default:
 		return Unsupported()
 	}
-	return s.Do(ctx, "POST", "/xrpc/com.atproto.repo.createRecord", map[string]any{"repo": s.Subject, "collection": collection, "record": map[string]any{"$type": collection, "subject": subject, "createdAt": time.Now().UTC().Format(time.RFC3339Nano)}}, nil)
+	var result any
+	if s.Written != nil {
+		result = s.Written
+	}
+	return s.Do(ctx, "POST", "/xrpc/com.atproto.repo.createRecord", map[string]any{"repo": s.Subject, "collection": collection, "record": map[string]any{"$type": collection, "subject": subject, "createdAt": time.Now().UTC().Format(time.RFC3339Nano)}}, result)
 }
 
 type Image struct {
@@ -527,7 +537,10 @@ func (s Session) Publish(ctx context.Context, text, key string, reply *schema.Co
 // Post fetches a single canonical object for delivery reconciliation.
 func (s Session) Post(ctx context.Context, id string) (schema.SocialPost, error) {
 	if s.LocalView && s.Network == "bluesky" {
-		return s.hostedPost(ctx, id)
+		if s.View == nil {
+			return schema.SocialPost{}, Unsupported()
+		}
+		return s.View.Post(ctx, id)
 	}
 	switch s.Network {
 	case "mastodon":
@@ -551,17 +564,10 @@ func (s Session) Post(ctx context.Context, id string) (schema.SocialPost, error)
 
 func (s Session) People(ctx context.Context, query string) ([]schema.SocialAccount, error) {
 	if s.LocalView && s.Network == "bluesky" {
-		items := []schema.SocialAccount{}
-		for _, a := range s.Actors {
-			if strings.Contains(strings.ToLower(a.Handle), strings.ToLower(query)) {
-				v, e := s.hostedProfile(ctx, a.DID)
-				if e != nil {
-					return items, e
-				}
-				items = append(items, v)
-			}
+		if s.View == nil {
+			return nil, Unsupported()
 		}
-		return items, nil
+		return s.View.People(ctx, query)
 	}
 	items := []schema.SocialAccount{}
 	switch s.Network {

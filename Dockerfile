@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
  && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
  && apt-get install -y --no-install-recommends nodejs \
  && rm -rf /var/lib/apt/lists/*
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.99.1 --target wasm32-wasip1
+ENV PATH="/root/.cargo/bin:$PATH"
 RUN go install github.com/agim/lidza/cmd/lidza@v0.1.132
 WORKDIR /src
 # sqlc generates db/queries/gen when the app has a sqlc.yaml (the db

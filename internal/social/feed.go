@@ -8,6 +8,10 @@ import (
 	"github.com/agim/lidza/pkg/router"
 	"sort"
 	"strings"
+	queries "zing/db/queries/gen"
+	"zing/internal/atview"
+	"zing/internal/chat"
+	"zing/internal/providers"
 	"zing/schema"
 )
 
@@ -29,7 +33,7 @@ func Feed(ctx context.Context, req *router.Request[router.None]) (schema.FeedPag
 	}
 	next := map[string]string{}
 	for _, c := range conns.Items {
-		if req.Query("connectionID") != "" && req.Query("connectionID") != c.ID {
+		if queryID(req, "connection") != "" && queryID(req, "connection") != c.ID {
 			continue
 		}
 		if req.Query("network") != "" && req.Query("network") != c.Network {
@@ -43,6 +47,12 @@ func Feed(ctx context.Context, req *router.Request[router.None]) (schema.FeedPag
 		if err != nil {
 			out.Warnings = append(out.Warnings, c.Network+": reconnect required")
 			continue
+		}
+		if s.LocalView {
+			s.View = atview.Reader{Owner: Owner(ctx), DID: s.Subject, Server: s.Server, Scope: req.Query("scope")}
+			if syncErr := atview.Refresh(ctx, s); syncErr != nil {
+				out.Warnings = append(out.Warnings, "Hosted Bluesky synchronization failed; retained indexed records are shown.")
+			}
 		}
 		f, err := s.Feed(ctx, cursors[c.ID], req.Query("q"))
 		if err != nil {
@@ -89,7 +99,7 @@ func publicError(e error) string {
 	return "The network is temporarily unavailable"
 }
 func Profile(ctx context.Context, req *router.Request[router.None]) (schema.SocialAccount, error) {
-	s, e := Load(ctx, Owner(ctx), req.Query("connectionID"))
+	s, e := Load(ctx, Owner(ctx), queryID(req, "connection"))
 	if e != nil {
 		return schema.SocialAccount{}, e
 	}
@@ -103,6 +113,44 @@ func Action(ctx context.Context, req *router.Request[schema.ActionRequest]) (sch
 	var in schema.ActionInput
 	if e = Convert(req.Body, &in); e != nil {
 		return schema.OperationResult{}, e
+	}
+	if s.LocalView {
+		if in.Action == "mute" || in.Action == "unmute" {
+			e = atview.Mute(ctx, Owner(ctx), s.Subject, in.Target, in.Action == "mute")
+			return schema.OperationResult{Ok: e == nil}, e
+		}
+		tx, err := db.From(ctx).Begin(ctx)
+		if err != nil {
+			return schema.OperationResult{}, err
+		}
+		defer tx.Rollback(ctx)
+		if err = queries.New(tx).AtSyncLock(ctx, "at-action:"+s.Subject); err != nil {
+			return schema.OperationResult{}, err
+		}
+		present, err := atview.IsActionPresent(ctx, s.Subject, in.Action, in.Target)
+		if err != nil {
+			return schema.OperationResult{}, err
+		}
+		if present {
+			return schema.OperationResult{Ok: true}, nil
+		}
+		var written providers.Ref
+		s.Written = &written
+		if e = s.Action(ctx, in); e != nil {
+			return schema.OperationResult{}, e
+		}
+		if written.URI != "" {
+			e = atview.RefreshOne(ctx, s, written.URI)
+		} else {
+			e = atview.RemoveAction(ctx, s.Subject, in.Action, in.Target)
+		}
+		if e != nil {
+			return schema.OperationResult{}, e
+		}
+		if e = tx.Commit(ctx); e != nil {
+			return schema.OperationResult{}, e
+		}
+		return schema.OperationResult{Ok: true}, nil
 	}
 	e = s.Action(ctx, in)
 	return schema.OperationResult{Ok: e == nil}, e
@@ -150,7 +198,12 @@ func Conversations(ctx context.Context, req *router.Request[router.None]) (schem
 			out.Warnings = append(out.Warnings, c.Network+": reconnect required")
 			continue
 		}
-		items, err := s.Conversations(ctx)
+		var items []schema.ConversationView
+		if s.Hosted && s.Network == "bluesky" {
+			items, err = chat.List(ctx, Owner(ctx), s.Subject)
+		} else {
+			items, err = s.Conversations(ctx)
+		}
 		if err != nil {
 			out.Warnings = append(out.Warnings, c.Network+": "+publicError(err))
 			continue
@@ -165,11 +218,14 @@ func Conversations(ctx context.Context, req *router.Request[router.None]) (schem
 }
 func Messages(ctx context.Context, req *router.Request[router.None]) (schema.MessageList, error) {
 	out := schema.MessageList{Items: []schema.MessageView{}}
-	s, e := Load(ctx, Owner(ctx), req.Query("connectionID"))
+	s, e := Load(ctx, Owner(ctx), queryID(req, "connection"))
 	if e != nil {
 		return out, e
 	}
-	out.Items, e = s.Messages(ctx, req.Query("conversationID"))
+	if s.Hosted && s.Network == "bluesky" {
+		return chat.Messages(ctx, Owner(ctx), s.Subject, queryID(req, "conversation"), req.Query("cursor"))
+	}
+	out.Items, e = s.Messages(ctx, queryID(req, "conversation"))
 	return out, e
 }
 func SendMessage(ctx context.Context, req *router.Request[schema.MessageInput]) (schema.OperationResult, error) {
@@ -180,7 +236,11 @@ func SendMessage(ctx context.Context, req *router.Request[schema.MessageInput]) 
 	if e != nil {
 		return schema.OperationResult{}, e
 	}
-	e = s.SendMessage(ctx, req.Body)
+	if s.Hosted && s.Network == "bluesky" {
+		e = chat.Send(ctx, Owner(ctx), s.Subject, req.Body)
+	} else {
+		e = s.SendMessage(ctx, req.Body)
+	}
 	return schema.OperationResult{Ok: e == nil}, e
 }
 
@@ -226,8 +286,34 @@ func OpenConversation(ctx context.Context, req *router.Request[schema.OpenConver
 	if e != nil {
 		return schema.ConversationView{}, e
 	}
-	v, e := s.OpenConversation(ctx, req.Body.Recipient)
+	var v schema.ConversationView
+	if s.Hosted && s.Network == "bluesky" {
+		v, e = chat.Open(ctx, Owner(ctx), s.Subject, req.Body.Recipient)
+	} else {
+		v, e = s.OpenConversation(ctx, req.Body.Recipient)
+	}
 	v.ConnectionID = req.Body.ConnectionID
 	v.Network = s.Network
 	return v, e
+}
+
+func AcceptZingConversation(ctx context.Context, req *router.Request[schema.ChatAcceptRequest]) (schema.OperationResult, error) {
+	s, e := Load(ctx, Owner(ctx), req.Body.ConnectionID)
+	if e != nil {
+		return schema.OperationResult{}, e
+	}
+	if !s.Hosted || s.Network != "bluesky" {
+		return schema.OperationResult{}, providers.Unsupported()
+	}
+	e = chat.Accept(ctx, Owner(ctx), s.Subject, req.Param("id"))
+	return schema.OperationResult{Ok: e == nil}, e
+}
+
+// The generated web client uses camelCase. Retain the initial uppercase-ID
+// query spelling for existing clients while checking ownership identically.
+func queryID(req *router.Request[router.None], name string) string {
+	if id := req.Query(name + "Id"); id != "" {
+		return id
+	}
+	return req.Query(name + "ID")
 }

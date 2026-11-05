@@ -296,3 +296,135 @@ CREATE INDEX hosted_identity_owner_id_idx ON hosted_identity (owner_id);
 CREATE UNIQUE INDEX hosted_identity_owner_id_network_key ON hosted_identity (owner_id, network);
 CREATE UNIQUE INDEX hosted_identity_network_username_key ON hosted_identity (network, username);
 
+CREATE TABLE at_record (
+  uri text PRIMARY KEY,
+  did text NOT NULL,
+  collection text NOT NULL,
+  cid text NOT NULL,
+  value jsonb NOT NULL,
+  text text NOT NULL DEFAULT '',
+  subject text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL,
+  indexed_at timestamptz NOT NULL DEFAULT now(),
+  scan_id text NOT NULL
+);
+CREATE INDEX at_record_did_idx ON at_record (did);
+CREATE INDEX at_record_collection_idx ON at_record (collection);
+
+CREATE TABLE at_sync_state (
+  started_at timestamptz NOT NULL DEFAULT now(),
+  id text PRIMARY KEY,
+  did text NOT NULL,
+  collection text NOT NULL,
+  cursor text NOT NULL DEFAULT '',
+  scan_id text NOT NULL,
+  completed_at timestamptz,
+  error text NOT NULL DEFAULT ''
+);
+CREATE INDEX at_sync_state_did_idx ON at_sync_state (did);
+
+CREATE TABLE at_preference (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id text NOT NULL,
+  did text NOT NULL,
+  target text NOT NULL,
+  kind text NOT NULL
+);
+CREATE INDEX at_preference_owner_id_idx ON at_preference (owner_id);
+CREATE UNIQUE INDEX at_preference_owner_id_did_target_kind_key ON at_preference (owner_id, did, target, kind);
+
+CREATE TABLE at_notification (
+  id text PRIMARY KEY,
+  recipient text NOT NULL,
+  actor text NOT NULL,
+  kind text NOT NULL,
+  record_uri text NOT NULL,
+  post_uri text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL,
+  read_at timestamptz
+);
+CREATE INDEX at_notification_recipient_idx ON at_notification (recipient);
+
+CREATE TABLE chat_conversation (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  pair_key text NOT NULL UNIQUE,
+  initiated_by text NOT NULL,
+  state text NOT NULL DEFAULT 'pending',
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE chat_member (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL,
+  owner_id text NOT NULL,
+  did text NOT NULL,
+  last_read_at timestamptz
+);
+CREATE INDEX chat_member_conversation_id_idx ON chat_member (conversation_id);
+CREATE INDEX chat_member_owner_id_idx ON chat_member (owner_id);
+CREATE UNIQUE INDEX chat_member_conversation_id_owner_id_key ON chat_member (conversation_id, owner_id);
+
+CREATE TABLE chat_message (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL,
+  sender_id text NOT NULL,
+  sender_did text NOT NULL,
+  client_id text NOT NULL,
+  text_sealed text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX chat_message_conversation_id_idx ON chat_message (conversation_id);
+CREATE INDEX chat_message_sender_id_idx ON chat_message (sender_id);
+CREATE UNIQUE INDEX chat_message_conversation_id_sender_id_client_id_key ON chat_message (conversation_id, sender_id, client_id);
+
+CREATE TABLE moderation_account (
+  owner_id text PRIMARY KEY,
+  suspended boolean NOT NULL DEFAULT false,
+  reason text NOT NULL DEFAULT '',
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE moderation_report (
+  kind text NOT NULL DEFAULT 'account',
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  reporter_id text NOT NULL,
+  network text NOT NULL,
+  target text NOT NULL,
+  target_owner_id text NOT NULL DEFAULT '',
+  reason text NOT NULL,
+  evidence_sealed text NOT NULL DEFAULT '',
+  state text NOT NULL DEFAULT 'open',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX moderation_report_reporter_id_idx ON moderation_report (reporter_id);
+
+CREATE TABLE moderation_action (
+  request_key uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  moderator_id text NOT NULL,
+  kind text NOT NULL,
+  network text NOT NULL,
+  target text NOT NULL,
+  reason text NOT NULL,
+  state text NOT NULL DEFAULT 'pending',
+  error text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE backend_credential (
+  id text PRIMARY KEY,
+  server text NOT NULL UNIQUE,
+  password_sealed text NOT NULL,
+  access_sealed text NOT NULL DEFAULT ''
+);
+
+CREATE TABLE moderation_destination (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  action_id uuid NOT NULL,
+  network text NOT NULL,
+  state text NOT NULL DEFAULT 'pending',
+  error text NOT NULL DEFAULT ''
+);
+CREATE INDEX moderation_destination_action_id_idx ON moderation_destination (action_id);
+CREATE UNIQUE INDEX moderation_destination_action_id_network_key ON moderation_destination (action_id, network);
+

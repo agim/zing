@@ -1,0 +1,57 @@
+diff --git a/dist/cjs.js b/dist/cjs.js
+index 7c36cbdd06cc22c92d590be3f87a08a91ca06b40..f1a8d8bd232f4349151d498a0f544d7a3cdb34a8 100644
+--- a/dist/cjs.js
++++ b/dist/cjs.js
+@@ -80,10 +80,14 @@ function mergeObject(target, source, options) {
+ 	var destination = {};
+ 	if (options.isMergeableObject(target)) {
+ 		getKeys(target).forEach(function(key) {
++        // Reject prototype-control keys even on null-prototype input.
++        if (key === "__proto__" || key === "constructor" || key === "prototype") return;
+ 			destination[key] = cloneUnlessOtherwiseSpecified(target[key], options);
+ 		});
+ 	}
+ 	getKeys(source).forEach(function(key) {
++        // Reject prototype-control keys even on null-prototype input.
++        if (key === "__proto__" || key === "constructor" || key === "prototype") return;
+ 		if (propertyIsUnsafe(target, key)) {
+ 			return
+ 		}
+diff --git a/dist/umd.js b/dist/umd.js
+index 4071e7c56ec8e5273fe166f6e723ac460fab8b72..ab19bbae259f7dd21e061d104572a3c749510990 100644
+--- a/dist/umd.js
++++ b/dist/umd.js
+@@ -84,10 +84,14 @@
+ 		var destination = {};
+ 		if (options.isMergeableObject(target)) {
+ 			getKeys(target).forEach(function(key) {
++        // Reject prototype-control keys even on null-prototype input.
++        if (key === "__proto__" || key === "constructor" || key === "prototype") return;
+ 				destination[key] = cloneUnlessOtherwiseSpecified(target[key], options);
+ 			});
+ 		}
+ 		getKeys(source).forEach(function(key) {
++        // Reject prototype-control keys even on null-prototype input.
++        if (key === "__proto__" || key === "constructor" || key === "prototype") return;
+ 			if (propertyIsUnsafe(target, key)) {
+ 				return
+ 			}
+diff --git a/index.js b/index.js
+index 77968aed5d456cccc294f60912ef381fa1e52a7b..acd1c47a011f2b89ce315f1a57e6992dd7d3ef76 100644
+--- a/index.js
++++ b/index.js
+@@ -55,10 +55,14 @@ function mergeObject(target, source, options) {
+ 	var destination = {}
+ 	if (options.isMergeableObject(target)) {
+ 		getKeys(target).forEach(function(key) {
++        // Reject prototype-control keys even on null-prototype input.
++        if (key === "__proto__" || key === "constructor" || key === "prototype") return;
+ 			destination[key] = cloneUnlessOtherwiseSpecified(target[key], options)
+ 		})
+ 	}
+ 	getKeys(source).forEach(function(key) {
++        // Reject prototype-control keys even on null-prototype input.
++        if (key === "__proto__" || key === "constructor" || key === "prototype") return;
+ 		if (propertyIsUnsafe(target, key)) {
+ 			return
+ 		}

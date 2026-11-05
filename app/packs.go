@@ -12,6 +12,7 @@ import (
 	mail "github.com/agim/lidza/packs/mail"
 	realtime "github.com/agim/lidza/packs/realtime"
 	storage "github.com/agim/lidza/packs/storage"
+	media_guard "zing/packs/media_guard"
 )
 
 // packs lists the packs lidza.json enables, started in this order.
@@ -24,5 +25,6 @@ func packs() []lidza.Pack {
 		cache.Pack(),
 		realtime.Pack(),
 		storage.Pack(),
+		media_guard.Pack(),
 	}
 }

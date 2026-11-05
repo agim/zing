@@ -14,11 +14,12 @@ import (
 	"github.com/agim/lidza/pkg/env"
 	"github.com/agim/lidza/pkg/router"
 	"github.com/jackc/pgx/v5"
+	"zing/internal/moderation"
 	"zing/internal/providers"
 	"zing/internal/social"
 )
 
-type deletion struct{ Network, Server, Subject, PasswordSealed, AccessSealed string }
+type deletion struct{ Network, Server, Subject, Username, OperationID, PasswordSealed, AccessSealed string }
 
 // QueueDeletion copies only sealed credentials into durable jobs before the
 // auth transaction removes local rows. Failures remain visible to operators.
@@ -29,14 +30,14 @@ func QueueDeletion(ctx context.Context, tx pgx.Tx, owner string) error {
 		}
 	}
 
-	rows, e := tx.Query(ctx, `SELECT h.network,h.server,h.subject,h.password_sealed,coalesce(c.access_sealed,'') FROM hosted_identity h LEFT JOIN social_connection c ON c.owner_id=h.owner_id AND c.network=h.network AND c.subject=h.subject AND c.hosted WHERE h.owner_id=$1 AND h.state<>'rejected'`, owner)
+	rows, e := tx.Query(ctx, `SELECT h.network,h.server,h.subject,h.username,h.id::text,h.password_sealed,coalesce(c.access_sealed,'') FROM hosted_identity h LEFT JOIN social_connection c ON c.owner_id=h.owner_id AND c.network=h.network AND c.subject=h.subject AND c.hosted WHERE h.owner_id=$1 AND h.state<>'rejected'`, owner)
 	if e != nil {
 		return e
 	}
 	identities := []deletion{}
 	for rows.Next() {
 		var d deletion
-		if e = rows.Scan(&d.Network, &d.Server, &d.Subject, &d.PasswordSealed, &d.AccessSealed); e != nil {
+		if e = rows.Scan(&d.Network, &d.Server, &d.Subject, &d.Username, &d.OperationID, &d.PasswordSealed, &d.AccessSealed); e != nil {
 			rows.Close()
 			return e
 		}
@@ -107,6 +108,10 @@ func Register(services *lidza.Services) {
 			return errors.New("hosted deletion could not be confirmed")
 		}
 		defer res.Body.Close()
+		if d.Network == "mastodon" {
+			res.Body.Close()
+			return moderation.ConfirmActivityPubErasure(ctx, d.Server, d.Subject, d.Username, d.OperationID, res.StatusCode >= 200 && res.StatusCode < 300)
+		}
 		if res.StatusCode < 200 || res.StatusCode >= 300 {
 			return errors.New("hosted deletion needs retry or operator reconciliation")
 		}

@@ -17,6 +17,7 @@ import (
 	"github.com/agim/lidza/pkg/router"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/jackc/pgx/v5"
+	"zing/internal/atview"
 	"zing/internal/providers"
 	"zing/internal/social"
 	"zing/schema"
@@ -413,7 +414,16 @@ func run(ctx context.Context, raw json.RawMessage) error {
 		}
 		return nil
 	}
-	return finish(ctx, p, "published", "", ref, remote)
+	if e = finish(ctx, p, "published", "", ref, remote); e != nil {
+		return e
+	}
+	if s.LocalView {
+		if e = atview.RefreshOne(ctx, s, ref.URI); e != nil {
+			_, queueErr := jobs.From(ctx).Enqueue(ctx, "zing.sync", map[string]string{"Owner": p.Owner, "Connection": connection})
+			return queueErr
+		}
+	}
+	return nil
 }
 func finish(ctx context.Context, p payload, state, message string, ref providers.Ref, remote string) error {
 	_, e := db.From(ctx).Exec(ctx, `UPDATE delivery SET state=$3,error=$4,remote_id=$5,remote_cid=$6,remote_url=$7,updated_at=now() WHERE owner_id=$1 AND id::text=$2`, p.Owner, p.Delivery, state, message, ref.URI, ref.CID, remote)

@@ -666,6 +666,372 @@ func (v HostedIdentity) Validate() error {
 	return errs.Result()
 }
 
+// AtRecord is a row of the at_record table.
+type AtRecord struct {
+	Uri        string          `json:"uri" db:"uri"`
+	Did        string          `json:"did" db:"did"`
+	Collection string          `json:"collection" db:"collection"`
+	Cid        string          `json:"cid" db:"cid"`
+	Value      json.RawMessage `json:"value" db:"value"`
+	Text       string          `json:"text" db:"text"`
+	Subject    string          `json:"subject" db:"subject"`
+	CreatedAt  time.Time       `json:"createdAt" db:"created_at"`
+	IndexedAt  time.Time       `json:"indexedAt" db:"indexed_at"`
+	ScanID     string          `json:"scanId" db:"scan_id"`
+}
+
+// Validate applies the rules of AtRecord from schema.lidza.
+func (v AtRecord) Validate() error {
+	var errs validate.Errors
+	if v.Did == "" {
+		errs.Add("did", "required", "required")
+	}
+	if v.Collection == "" {
+		errs.Add("collection", "required", "required")
+	}
+	if v.Cid == "" {
+		errs.Add("cid", "required", "required")
+	}
+	if v.Text == "" {
+		errs.Add("text", "required", "required")
+	}
+	if v.Subject == "" {
+		errs.Add("subject", "required", "required")
+	}
+	if v.ScanID == "" {
+		errs.Add("scanId", "required", "required")
+	}
+	return errs.Result()
+}
+
+// AtSyncState is a row of the at_sync_state table.
+type AtSyncState struct {
+	StartedAt   time.Time  `json:"startedAt" db:"started_at"`
+	ID          string     `json:"id" db:"id"`
+	Did         string     `json:"did" db:"did"`
+	Collection  string     `json:"collection" db:"collection"`
+	Cursor      string     `json:"cursor" db:"cursor"`
+	ScanID      string     `json:"scanId" db:"scan_id"`
+	CompletedAt *time.Time `json:"completedAt" db:"completed_at"`
+	Error       string     `json:"error" db:"error"`
+}
+
+// Validate applies the rules of AtSyncState from schema.lidza.
+func (v AtSyncState) Validate() error {
+	var errs validate.Errors
+	if v.Did == "" {
+		errs.Add("did", "required", "required")
+	}
+	if v.Collection == "" {
+		errs.Add("collection", "required", "required")
+	}
+	if v.Cursor == "" {
+		errs.Add("cursor", "required", "required")
+	}
+	if v.ScanID == "" {
+		errs.Add("scanId", "required", "required")
+	}
+	if v.Error == "" {
+		errs.Add("error", "required", "required")
+	}
+	return errs.Result()
+}
+
+// AtPreference is a row of the at_preference table.
+type AtPreference struct {
+	ID      string `json:"id" db:"id"`
+	OwnerID string `json:"ownerId" db:"owner_id"`
+	Did     string `json:"did" db:"did"`
+	Target  string `json:"target" db:"target"`
+	Kind    string `json:"kind" db:"kind"`
+}
+
+// Validate applies the rules of AtPreference from schema.lidza.
+func (v AtPreference) Validate() error {
+	var errs validate.Errors
+	if v.OwnerID == "" {
+		errs.Add("ownerId", "required", "required")
+	}
+	if v.Did == "" {
+		errs.Add("did", "required", "required")
+	}
+	if v.Target == "" {
+		errs.Add("target", "required", "required")
+	}
+	if v.Kind == "" {
+		errs.Add("kind", "required", "required")
+	}
+	return errs.Result()
+}
+
+// AtNotification is a row of the at_notification table.
+type AtNotification struct {
+	ID        string     `json:"id" db:"id"`
+	Recipient string     `json:"recipient" db:"recipient"`
+	Actor     string     `json:"actor" db:"actor"`
+	Kind      string     `json:"kind" db:"kind"`
+	RecordUri string     `json:"recordUri" db:"record_uri"`
+	PostUri   string     `json:"postUri" db:"post_uri"`
+	CreatedAt time.Time  `json:"createdAt" db:"created_at"`
+	ReadAt    *time.Time `json:"readAt" db:"read_at"`
+}
+
+// Validate applies the rules of AtNotification from schema.lidza.
+func (v AtNotification) Validate() error {
+	var errs validate.Errors
+	if v.Recipient == "" {
+		errs.Add("recipient", "required", "required")
+	}
+	if v.Actor == "" {
+		errs.Add("actor", "required", "required")
+	}
+	if v.Kind == "" {
+		errs.Add("kind", "required", "required")
+	}
+	if v.RecordUri == "" {
+		errs.Add("recordUri", "required", "required")
+	}
+	if v.PostUri == "" {
+		errs.Add("postUri", "required", "required")
+	}
+	return errs.Result()
+}
+
+// ChatConversation is a row of the chat_conversation table.
+type ChatConversation struct {
+	ID          string    `json:"id" db:"id"`
+	PairKey     string    `json:"pairKey" db:"pair_key"`
+	InitiatedBy string    `json:"initiatedBy" db:"initiated_by"`
+	State       string    `json:"state" db:"state"`
+	UpdatedAt   time.Time `json:"updatedAt" db:"updated_at"`
+}
+
+// Validate applies the rules of ChatConversation from schema.lidza.
+func (v ChatConversation) Validate() error {
+	var errs validate.Errors
+	if v.PairKey == "" {
+		errs.Add("pairKey", "required", "required")
+	}
+	if v.InitiatedBy == "" {
+		errs.Add("initiatedBy", "required", "required")
+	}
+	if v.State == "" {
+		errs.Add("state", "required", "required")
+	}
+	return errs.Result()
+}
+
+// ChatMember is a row of the chat_member table.
+type ChatMember struct {
+	ID             string     `json:"id" db:"id"`
+	ConversationID string     `json:"conversationId" db:"conversation_id"`
+	OwnerID        string     `json:"ownerId" db:"owner_id"`
+	Did            string     `json:"did" db:"did"`
+	LastReadAt     *time.Time `json:"lastReadAt" db:"last_read_at"`
+}
+
+// Validate applies the rules of ChatMember from schema.lidza.
+func (v ChatMember) Validate() error {
+	var errs validate.Errors
+	if v.ConversationID == "" {
+		errs.Add("conversationId", "required", "required")
+	}
+	if v.OwnerID == "" {
+		errs.Add("ownerId", "required", "required")
+	}
+	if v.Did == "" {
+		errs.Add("did", "required", "required")
+	}
+	return errs.Result()
+}
+
+// ChatMessage is a row of the chat_message table.
+type ChatMessage struct {
+	ID             string    `json:"id" db:"id"`
+	ConversationID string    `json:"conversationId" db:"conversation_id"`
+	SenderID       string    `json:"senderId" db:"sender_id"`
+	SenderDid      string    `json:"senderDid" db:"sender_did"`
+	ClientID       string    `json:"clientId" db:"client_id"`
+	TextSealed     string    `json:"textSealed" db:"text_sealed"`
+	CreatedAt      time.Time `json:"createdAt" db:"created_at"`
+}
+
+// Validate applies the rules of ChatMessage from schema.lidza.
+func (v ChatMessage) Validate() error {
+	var errs validate.Errors
+	if v.ConversationID == "" {
+		errs.Add("conversationId", "required", "required")
+	}
+	if v.SenderID == "" {
+		errs.Add("senderId", "required", "required")
+	}
+	if v.SenderDid == "" {
+		errs.Add("senderDid", "required", "required")
+	}
+	if v.ClientID == "" {
+		errs.Add("clientId", "required", "required")
+	}
+	if v.TextSealed == "" {
+		errs.Add("textSealed", "required", "required")
+	}
+	return errs.Result()
+}
+
+// ModerationAccount is a row of the moderation_account table.
+type ModerationAccount struct {
+	OwnerID   string    `json:"ownerId" db:"owner_id"`
+	Suspended bool      `json:"suspended" db:"suspended"`
+	Reason    string    `json:"reason" db:"reason"`
+	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
+}
+
+// Validate applies the rules of ModerationAccount from schema.lidza.
+func (v ModerationAccount) Validate() error {
+	var errs validate.Errors
+	if v.Reason == "" {
+		errs.Add("reason", "required", "required")
+	}
+	return errs.Result()
+}
+
+// ModerationReport is a row of the moderation_report table.
+type ModerationReport struct {
+	Kind           string    `json:"kind" db:"kind"`
+	ID             string    `json:"id" db:"id"`
+	ReporterID     string    `json:"reporterId" db:"reporter_id"`
+	Network        string    `json:"network" db:"network"`
+	Target         string    `json:"target" db:"target"`
+	TargetOwnerID  string    `json:"targetOwnerId" db:"target_owner_id"`
+	Reason         string    `json:"reason" db:"reason"`
+	EvidenceSealed string    `json:"evidenceSealed" db:"evidence_sealed"`
+	State          string    `json:"state" db:"state"`
+	CreatedAt      time.Time `json:"createdAt" db:"created_at"`
+}
+
+// Validate applies the rules of ModerationReport from schema.lidza.
+func (v ModerationReport) Validate() error {
+	var errs validate.Errors
+	if v.Kind == "" {
+		errs.Add("kind", "required", "required")
+	}
+	if v.ReporterID == "" {
+		errs.Add("reporterId", "required", "required")
+	}
+	if v.Network == "" {
+		errs.Add("network", "required", "required")
+	}
+	if v.Target == "" {
+		errs.Add("target", "required", "required")
+	}
+	if v.TargetOwnerID == "" {
+		errs.Add("targetOwnerId", "required", "required")
+	}
+	if v.Reason == "" {
+		errs.Add("reason", "required", "required")
+	}
+	if v.EvidenceSealed == "" {
+		errs.Add("evidenceSealed", "required", "required")
+	}
+	if v.State == "" {
+		errs.Add("state", "required", "required")
+	}
+	return errs.Result()
+}
+
+// ModerationAction is a row of the moderation_action table.
+type ModerationAction struct {
+	RequestKey  string    `json:"requestKey" db:"request_key"`
+	ID          string    `json:"id" db:"id"`
+	ModeratorID string    `json:"moderatorId" db:"moderator_id"`
+	Kind        string    `json:"kind" db:"kind"`
+	Network     string    `json:"network" db:"network"`
+	Target      string    `json:"target" db:"target"`
+	Reason      string    `json:"reason" db:"reason"`
+	State       string    `json:"state" db:"state"`
+	Error       string    `json:"error" db:"error"`
+	CreatedAt   time.Time `json:"createdAt" db:"created_at"`
+}
+
+// Validate applies the rules of ModerationAction from schema.lidza.
+func (v ModerationAction) Validate() error {
+	var errs validate.Errors
+	if v.RequestKey == "" {
+		errs.Add("requestKey", "required", "required")
+	}
+	if v.ModeratorID == "" {
+		errs.Add("moderatorId", "required", "required")
+	}
+	if v.Kind == "" {
+		errs.Add("kind", "required", "required")
+	}
+	if v.Network == "" {
+		errs.Add("network", "required", "required")
+	}
+	if v.Target == "" {
+		errs.Add("target", "required", "required")
+	}
+	if v.Reason == "" {
+		errs.Add("reason", "required", "required")
+	}
+	if v.State == "" {
+		errs.Add("state", "required", "required")
+	}
+	if v.Error == "" {
+		errs.Add("error", "required", "required")
+	}
+	return errs.Result()
+}
+
+// BackendCredential is a row of the backend_credential table.
+type BackendCredential struct {
+	ID             string `json:"id" db:"id"`
+	Server         string `json:"server" db:"server"`
+	PasswordSealed string `json:"passwordSealed" db:"password_sealed"`
+	AccessSealed   string `json:"accessSealed" db:"access_sealed"`
+}
+
+// Validate applies the rules of BackendCredential from schema.lidza.
+func (v BackendCredential) Validate() error {
+	var errs validate.Errors
+	if v.Server == "" {
+		errs.Add("server", "required", "required")
+	}
+	if v.PasswordSealed == "" {
+		errs.Add("passwordSealed", "required", "required")
+	}
+	if v.AccessSealed == "" {
+		errs.Add("accessSealed", "required", "required")
+	}
+	return errs.Result()
+}
+
+// ModerationDestination is a row of the moderation_destination table.
+type ModerationDestination struct {
+	ID       string `json:"id" db:"id"`
+	ActionID string `json:"actionId" db:"action_id"`
+	Network  string `json:"network" db:"network"`
+	State    string `json:"state" db:"state"`
+	Error    string `json:"error" db:"error"`
+}
+
+// Validate applies the rules of ModerationDestination from schema.lidza.
+func (v ModerationDestination) Validate() error {
+	var errs validate.Errors
+	if v.ActionID == "" {
+		errs.Add("actionId", "required", "required")
+	}
+	if v.Network == "" {
+		errs.Add("network", "required", "required")
+	}
+	if v.State == "" {
+		errs.Add("state", "required", "required")
+	}
+	if v.Error == "" {
+		errs.Add("error", "required", "required")
+	}
+	return errs.Result()
+}
+
 // Greeting is an API type.
 type Greeting struct {
 	Name    string `json:"name"`
@@ -1214,6 +1580,10 @@ func (v NotificationList) Validate() error {
 
 // ConversationView is an API type.
 type ConversationView struct {
+	CanAccept    bool   `json:"canAccept"`
+	Service      string `json:"service"`
+	Pending      bool   `json:"pending"`
+	CanReply     bool   `json:"canReply"`
 	ID           string `json:"id"`
 	ConnectionID string `json:"connectionId"`
 	Network      string `json:"network"`
@@ -1226,6 +1596,9 @@ type ConversationView struct {
 // Validate applies the rules of ConversationView from schema.lidza.
 func (v ConversationView) Validate() error {
 	var errs validate.Errors
+	if v.Service == "" {
+		errs.Add("service", "required", "required")
+	}
 	if v.ID == "" {
 		errs.Add("id", "required", "required")
 	}
@@ -1267,6 +1640,7 @@ func (v ConversationList) Validate() error {
 
 // MessageView is an API type.
 type MessageView struct {
+	SenderDid string `json:"senderDid"`
 	ID        string `json:"id"`
 	Sender    string `json:"sender"`
 	Text      string `json:"text"`
@@ -1276,6 +1650,9 @@ type MessageView struct {
 // Validate applies the rules of MessageView from schema.lidza.
 func (v MessageView) Validate() error {
 	var errs validate.Errors
+	if v.SenderDid == "" {
+		errs.Add("senderDid", "required", "required")
+	}
 	if v.ID == "" {
 		errs.Add("id", "required", "required")
 	}
@@ -1293,12 +1670,22 @@ func (v MessageView) Validate() error {
 
 // MessageList is an API type.
 type MessageList struct {
-	Items []MessageView `json:"items"`
+	CanAccept bool          `json:"canAccept"`
+	Cursor    string        `json:"cursor"`
+	Service   string        `json:"service"`
+	CanReply  bool          `json:"canReply"`
+	Items     []MessageView `json:"items"`
 }
 
 // Validate applies the rules of MessageList from schema.lidza.
 func (v MessageList) Validate() error {
 	var errs validate.Errors
+	if v.Cursor == "" {
+		errs.Add("cursor", "required", "required")
+	}
+	if v.Service == "" {
+		errs.Add("service", "required", "required")
+	}
 	for _, x := range v.Items {
 		if err := x.Validate(); err != nil {
 			errs.Add("items", "nested", err.Error())
@@ -1310,6 +1697,7 @@ func (v MessageList) Validate() error {
 
 // MessageInput is an API type.
 type MessageInput struct {
+	ClientID       string `json:"clientId"`
 	ConnectionID   string `json:"connectionId"`
 	ConversationID string `json:"conversationId"`
 	Text           string `json:"text"`
@@ -1318,6 +1706,9 @@ type MessageInput struct {
 // Validate applies the rules of MessageInput from schema.lidza.
 func (v MessageInput) Validate() error {
 	var errs validate.Errors
+	if v.ClientID == "" {
+		errs.Add("clientId", "required", "required")
+	}
 	if v.ConnectionID == "" {
 		errs.Add("connectionId", "required", "required")
 	}
@@ -1631,6 +2022,134 @@ func (v HostingStatus) Validate() error {
 			errs.Add("identities", "nested", err.Error())
 			break
 		}
+	}
+	return errs.Result()
+}
+
+// ImageGuardInput is an API type.
+type ImageGuardInput struct {
+	Data string `json:"data"`
+}
+
+// Validate applies the rules of ImageGuardInput from schema.lidza.
+func (v ImageGuardInput) Validate() error {
+	var errs validate.Errors
+	if v.Data == "" {
+		errs.Add("data", "required", "required")
+	}
+	if len(v.Data) < 1 {
+		errs.Add("data", "min", "at least 1 character(s)")
+	}
+	if len(v.Data) > 12000000 {
+		errs.Add("data", "max", "at most 12000000 character(s)")
+	}
+	return errs.Result()
+}
+
+// ImageGuardOutput is an API type.
+type ImageGuardOutput struct {
+	Data   string `json:"data"`
+	Mime   string `json:"mime"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
+}
+
+// Validate applies the rules of ImageGuardOutput from schema.lidza.
+func (v ImageGuardOutput) Validate() error {
+	var errs validate.Errors
+	if v.Data == "" {
+		errs.Add("data", "required", "required")
+	}
+	if v.Mime == "" {
+		errs.Add("mime", "required", "required")
+	}
+	return errs.Result()
+}
+
+// ReportRequest is an API type.
+type ReportRequest struct {
+	Kind         string  `json:"kind"`
+	ConnectionID string  `json:"connectionId"`
+	Target       string  `json:"target"`
+	Reason       string  `json:"reason"`
+	MessageID    *string `json:"messageId"`
+}
+
+// Validate applies the rules of ReportRequest from schema.lidza.
+func (v ReportRequest) Validate() error {
+	var errs validate.Errors
+	if v.Kind == "" {
+		errs.Add("kind", "required", "required")
+	}
+	if len(v.Kind) < 1 {
+		errs.Add("kind", "min", "at least 1 character(s)")
+	}
+	if len(v.Kind) > 20 {
+		errs.Add("kind", "max", "at most 20 character(s)")
+	}
+	if v.ConnectionID == "" {
+		errs.Add("connectionId", "required", "required")
+	}
+	if len(v.ConnectionID) < 1 {
+		errs.Add("connectionId", "min", "at least 1 character(s)")
+	}
+	if v.Target == "" {
+		errs.Add("target", "required", "required")
+	}
+	if len(v.Target) < 1 {
+		errs.Add("target", "min", "at least 1 character(s)")
+	}
+	if len(v.Target) > 2048 {
+		errs.Add("target", "max", "at most 2048 character(s)")
+	}
+	if v.Reason == "" {
+		errs.Add("reason", "required", "required")
+	}
+	if len(v.Reason) < 1 {
+		errs.Add("reason", "min", "at least 1 character(s)")
+	}
+	if len(v.Reason) > 2000 {
+		errs.Add("reason", "max", "at most 2000 character(s)")
+	}
+	if v.MessageID != nil {
+		x := *v.MessageID
+		if len(x) > 100 {
+			errs.Add("messageId", "max", "at most 100 character(s)")
+		}
+	}
+	return errs.Result()
+}
+
+// ChatAcceptRequest is an API type.
+type ChatAcceptRequest struct {
+	ConnectionID string `json:"connectionId"`
+}
+
+// Validate applies the rules of ChatAcceptRequest from schema.lidza.
+func (v ChatAcceptRequest) Validate() error {
+	var errs validate.Errors
+	if v.ConnectionID == "" {
+		errs.Add("connectionId", "required", "required")
+	}
+	return errs.Result()
+}
+
+// AppealRequest is an API type.
+type AppealRequest struct {
+	Reason string `json:"reason"`
+}
+
+// Validate applies the rules of AppealRequest from schema.lidza.
+func (v AppealRequest) Validate() error {
+	var errs validate.Errors
+	if v.Reason == "" {
+		errs.Add("reason", "required", "required")
+	}
+	if len(v.Reason) < 1 {
+		errs.Add("reason", "min", "at least 1 character(s)")
+	}
+	if len(v.Reason) > 2000 {
+		errs.Add("reason", "max", "at most 2000 character(s)")
 	}
 	return errs.Result()
 }

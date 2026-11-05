@@ -16,8 +16,10 @@ import {
   type ConversationView,
   type ComposeRequest,
   type SocialAccount,
+  type MessageView,
 } from "@lidza/client";
 import { Icon } from "./Icon";
+import { useUserLive } from "./live";
 
 type Page =
   | "Home"
@@ -50,7 +52,10 @@ function message(e: unknown): string {
   if (e instanceof ApiError) {
     if (e.fields)
       return e.fields.map((f) => `${f.field}: ${f.message}`).join("; ");
-    return e.message;
+    const detail = (e.body as { error?: unknown } | undefined)?.error;
+    return typeof detail === "string"
+      ? detail
+      : "Request failed. Please try again.";
   }
   return e instanceof Error
     ? e.message
@@ -172,6 +177,15 @@ export function Zing() {
       (SocialAccount & { connectionId: string }) | null
     >(null),
     [postMenu, setPostMenu] = useState<SocialPost | null>(null);
+  const [reporting, setReporting] = useState<{
+    connectionId: string;
+    target: string;
+    kind: "post" | "account" | "message";
+    messageId?: string;
+  } | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [attachEvidence, setAttachEvidence] = useState(false);
+  const [appealReason, setAppealReason] = useState("");
   const [relayCandidate, setRelayCandidate] = useState("");
   const [publicationTab, setPublicationTab] = useState("Drafts"),
     [feedItems, setFeedItems] = useState<SocialPost[]>([]),
@@ -182,6 +196,13 @@ export function Zing() {
     retry: false,
   });
   const user = session.data?.user;
+  const [livePaused, setLivePaused] = useState(false);
+  useUserLive(user?.verified ? user.subject : undefined, livePaused);
+  const pendingSends = useRef(new Map<string, { text: string; id: string }>());
+  const [olderMessages, setOlderMessages] = useState<MessageView[]>([]);
+  const [olderCursor, setOlderCursor] = useState<string | undefined>();
+  const [feedScope, setFeedScope] = useState("following");
+
   const connections = useQuery({
     queryKey: ["connections", user?.subject],
     queryFn: () => api.connections(),
@@ -199,11 +220,11 @@ export function Zing() {
   const [hostedUsername, setHostedUsername] = useState("");
 
   const feed = useQuery({
-    queryKey: ["feed", user?.subject, network, search],
+    queryKey: ["feed", user?.subject, network, search, feedScope],
     queryFn: () =>
       page === "Search"
-        ? api.search({ query: { network, q: search } })
-        : api.feed({ query: { network } }),
+        ? api.search({ query: { network, q: search, scope: feedScope } })
+        : api.feed({ query: { network, scope: feedScope } }),
     enabled: !!user?.verified && (page === "Home" || page === "Search"),
     retry: false,
   });
@@ -249,6 +270,17 @@ export function Zing() {
     retry: false,
   });
   useEffect(() => {
+    setOlderMessages([]);
+    setOlderCursor(undefined);
+  }, [conversation?.id, conversation?.connectionId, user?.subject]);
+  useEffect(() => {
+    setFeedItems([]);
+    setCursor("");
+  }, [network, search, feedScope]);
+  useEffect(() => {
+    pendingSends.current.clear();
+  }, [user?.subject]);
+  useEffect(() => {
     if (window.location.hash.includes("connect_error="))
       setFailure(
         new Error("Account authorization failed or expired. Please reconnect."),
@@ -269,9 +301,24 @@ export function Zing() {
     setDraftId("");
     setSchedule("");
   }, [user?.subject]);
+  const firstPageKeys = useRef(new Set<string>());
+  useEffect(() => {
+    firstPageKeys.current.clear();
+  }, [network, search, feedScope, user?.subject]);
   useEffect(() => {
     if (feed.data) {
-      setFeedItems(feed.data.items);
+      const items = feed.data.items;
+      const fresh = new Set(items.map((p) => p.connectionId + p.id));
+      const previous = firstPageKeys.current;
+      setFeedItems((old) => [
+        ...items,
+        ...old.filter(
+          (p) =>
+            !previous.has(p.connectionId + p.id) &&
+            !fresh.has(p.connectionId + p.id),
+        ),
+      ]);
+      firstPageKeys.current = fresh;
       setCursor(feed.data.cursor);
     }
   }, [feed.data]);
@@ -349,7 +396,8 @@ export function Zing() {
   }
   const people = useQuery({
     queryKey: ["people", user?.subject, network, search],
-    queryFn: () => api.people({ query: { network, q: search } }),
+    queryFn: () =>
+      api.people({ query: { network, q: search, scope: feedScope } }),
     enabled: !!user?.verified && page === "Search" && !!search,
     retry: false,
   });
@@ -525,6 +573,13 @@ export function Zing() {
           {errors.filter(Boolean).map((e, i) => (
             <ErrorNotice error={e} key={i} />
           ))}
+          <button
+            className="small secondary"
+            onClick={() => setLivePaused((value) => !value)}
+            aria-pressed={livePaused}
+          >
+            {livePaused ? "Resume live updates" : "Pause live updates"}
+          </button>
           {(page === "Home" || page === "Search") && (
             <>
               {page === "Home" ? (
@@ -640,6 +695,19 @@ export function Zing() {
                   ))}
                   <h2 className="section-title">Posts</h2>
                 </>
+              )}
+              {conns.some((c) => c.hosted && c.network === "bluesky") && (
+                <label className="field">
+                  Hosted Bluesky feed
+                  <select
+                    aria-label="Hosted Bluesky feed"
+                    value={feedScope}
+                    onChange={(event) => setFeedScope(event.target.value)}
+                  >
+                    <option value="following">Following</option>
+                    <option value="discover">Discover local posts</option>
+                  </select>
+                </label>
               )}
               <Notices items={feed.data?.warnings} />
               {feed.isPending && (
@@ -798,9 +866,16 @@ export function Zing() {
                       const more =
                         page === "Search"
                           ? await api.search({
-                              query: { network, q: search, cursor },
+                              query: {
+                                network,
+                                q: search,
+                                cursor,
+                                scope: feedScope,
+                              },
                             })
-                          : await api.feed({ query: { network, cursor } });
+                          : await api.feed({
+                              query: { network, cursor, scope: feedScope },
+                            });
                       setFeedItems((old) => {
                         const ids = new Set(
                           old.map((p) => p.connectionId + p.id),
@@ -934,7 +1009,7 @@ export function Zing() {
                   />
                 </label>
                 <label className="field">
-                  Attach images (up to 4)
+                  Attach still images (up to 4)
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/webp,image/gif"
@@ -955,6 +1030,10 @@ export function Zing() {
                     }}
                   />
                 </label>
+                <p className="meta">
+                  Images are checked, resized to 1400 pixels and stored as PNG
+                  with metadata removed. Animated uploads are not supported.
+                </p>
                 {compose.mediaIds?.map((id) => (
                   <div className="field" key={id}>
                     <div className="row">
@@ -1056,8 +1135,11 @@ export function Zing() {
               </p>
               <div className="notice">
                 Threads messaging is unavailable through this integration.
-                Mastodon private mentions are not end-to-end encrypted. Bluesky
-                requires an authorization grant with chat access.
+                Mastodon private mentions are not end-to-end encrypted.
+                Connected Bluesky accounts require a grant with native chat
+                access. Hosted AT Protocol accounts use private Zing chat, with
+                recipient acceptance. Zing chat is stored encrypted on this
+                server and is not end-to-end encrypted or relayed to Bluesky.
               </div>
               <button
                 className="secondary"
@@ -1079,7 +1161,11 @@ export function Zing() {
                       <span>
                         <strong>{c.title}</strong>
                         <br />
-                        <small>{names[c.network]}</small>
+                        <small>
+                          {c.service === "zing"
+                            ? "Zing chat · hosted AT Protocol"
+                            : names[c.network]}
+                        </small>
                         <br />
                         <span className="meta">{c.lastText.slice(0, 50)}</span>
                       </span>
@@ -1092,39 +1178,146 @@ export function Zing() {
                       <div className="row">
                         <strong>{conversation.title}</strong>
                         <span className={"network " + conversation.network}>
-                          {names[conversation.network]}
+                          {conversation.service === "zing"
+                            ? "Zing chat"
+                            : names[conversation.network]}
                         </span>
                       </div>
+                      {messages.data?.service === "zing" && (
+                        <p className="meta">
+                          Private Zing conversation. Messages stay on this
+                          instance.
+                        </p>
+                      )}
+                      {messages.data?.cursor && olderCursor !== "" && (
+                        <button
+                          className="secondary"
+                          disabled={busy}
+                          onClick={() =>
+                            void act(async () => {
+                              const before =
+                                document.documentElement.scrollHeight;
+                              const data = await api.messages({
+                                query: {
+                                  connectionId: conversation.connectionId,
+                                  conversationId: conversation.id,
+                                  cursor: olderCursor ?? messages.data!.cursor,
+                                },
+                              });
+                              setOlderMessages((current) => [
+                                ...data.items,
+                                ...current,
+                              ]);
+                              setOlderCursor(data.cursor);
+                              requestAnimationFrame(() =>
+                                window.scrollBy(
+                                  0,
+                                  document.documentElement.scrollHeight -
+                                    before,
+                                ),
+                              );
+                            })
+                          }
+                        >
+                          Load older messages
+                        </button>
+                      )}
                       {messages.isPending ? (
                         <p role="status">Loading conversation…</p>
                       ) : (
-                        messages.data?.items.map((m) => (
-                          <div
-                            key={m.id}
-                            className={
-                              "bubble " +
-                              (conns.find(
-                                (c) => c.id === conversation.connectionId,
-                              )?.subject === m.sender
-                                ? "mine"
-                                : "")
-                            }
-                          >
-                            <small className="meta">{m.sender}</small>
-                            <div className="preserve">{m.text}</div>
-                          </div>
-                        ))
+                        [...olderMessages, ...(messages.data?.items || [])]
+                          .filter(
+                            (m, i, all) =>
+                              all.findIndex((item) => item.id === m.id) === i,
+                          )
+                          .map((m) => (
+                            <div
+                              key={m.id}
+                              className={
+                                "bubble " +
+                                (conns.find(
+                                  (c) => c.id === conversation.connectionId,
+                                )?.subject === (m.senderDid || m.sender)
+                                  ? "mine"
+                                  : "")
+                              }
+                            >
+                              <small className="meta">{m.sender}</small>
+                              <div className="preserve">{m.text}</div>
+                              {messages.data?.service === "zing" &&
+                                m.senderDid !==
+                                  conns.find(
+                                    (c) => c.id === conversation.connectionId,
+                                  )?.subject && (
+                                  <button
+                                    className="small"
+                                    onClick={() => {
+                                      setReportReason("");
+                                      setAttachEvidence(false);
+                                      setReporting({
+                                        connectionId: conversation.connectionId,
+                                        target: m.senderDid,
+                                        kind: "message",
+                                        messageId: m.id,
+                                      });
+                                    }}
+                                  >
+                                    Report this message
+                                  </button>
+                                )}
+                            </div>
+                          ))
                       )}
+                      {messages.data?.canAccept && (
+                        <button
+                          className="primary"
+                          disabled={busy}
+                          onClick={() =>
+                            void act(async () => {
+                              await api.acceptZingConversation(
+                                { id: conversation.id },
+                                { connectionId: conversation.connectionId },
+                              );
+                              refresh("messages");
+                              refresh("conversations");
+                            }, "Conversation accepted")
+                          }
+                        >
+                          Accept conversation
+                        </button>
+                      )}
+                      {messages.data?.service === "zing" &&
+                        !messages.data.canReply &&
+                        !messages.data.canAccept && (
+                          <p className="notice">
+                            Replies are unavailable. Pending invitations require
+                            acceptance; deleted accounts cannot receive replies.
+                          </p>
+                        )}
                       <MessageForm
                         key={conversation.connectionId + conversation.id}
-                        disabled={busy}
+                        disabled={
+                          busy ||
+                          messages.isPending ||
+                          (messages.data?.service === "zing" &&
+                            !messages.data.canReply)
+                        }
                         send={(text) =>
                           act(async () => {
+                            const key =
+                              conversation.connectionId + ":" + conversation.id;
+                            let attempt = pendingSends.current.get(key);
+                            if (!attempt || attempt.text !== text) {
+                              attempt = { text, id: crypto.randomUUID() };
+                              pendingSends.current.set(key, attempt);
+                            }
                             await api.sendMessage({
+                              clientId: attempt.id,
                               connectionId: conversation.connectionId,
                               conversationId: conversation.id,
                               text,
                             });
+                            pendingSends.current.delete(key);
                             refresh("messages");
                             refresh("conversations");
                           })
@@ -1285,6 +1478,36 @@ export function Zing() {
           {page === "Settings" && (
             <>
               <h1 className="title">Make yourself at home.</h1>
+              <details className="card form-card">
+                <summary>Suspension appeals</summary>
+                <p>
+                  If your account is suspended, you can submit one open appeal
+                  to this instance’s moderators. Account deletion remains
+                  available below.
+                </p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void act(async () => {
+                      await api.appeal({ reason: appealReason });
+                      setAppealReason("");
+                    }, "Appeal submitted");
+                  }}
+                >
+                  <label>
+                    Appeal reason
+                    <textarea
+                      required
+                      maxLength={2000}
+                      value={appealReason}
+                      onChange={(e) => setAppealReason(e.target.value)}
+                    />
+                  </label>
+                  <button className="secondary" disabled={busy}>
+                    Submit appeal
+                  </button>
+                </form>
+              </details>
               <p className="subtitle">
                 Your accounts, your preferences, your corner of the internet.
               </p>
@@ -1597,6 +1820,50 @@ export function Zing() {
           }}
         />
       )}
+      {reporting && (
+        <Dialog
+          title="Report to this Zing instance"
+          onClose={() => setReporting(null)}
+        >
+          <form
+            className="stack"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void act(async () => {
+                await api.report({ ...reporting, reason: reportReason });
+                setReporting(null);
+              }, "Report sent to the instance moderators");
+            }}
+          >
+            <p>The report stays with this installation’s moderators.</p>
+            {reporting.kind === "message" && (
+              <label>
+                <input
+                  type="checkbox"
+                  required
+                  checked={attachEvidence}
+                  onChange={(e) => setAttachEvidence(e.target.checked)}
+                />
+                Attach this selected private message and its sender to the
+                report. No other messages are included.
+              </label>
+            )}
+            <label>
+              Reason
+              <textarea
+                required
+                maxLength={2000}
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+              />
+            </label>
+            <ErrorNotice error={failure} />
+            <button className="primary" disabled={busy}>
+              Send report
+            </button>
+          </form>
+        </Dialog>
+      )}
       {profile && (
         <Dialog
           title={profile.name || profile.handle}
@@ -1605,6 +1872,20 @@ export function Zing() {
           <Avatar name={profile.name || profile.handle} src={profile.avatar} />
           <p className="meta">@{profile.handle}</p>
           <p className="post-body">{profile.bio}</p>
+          <button
+            className="small"
+            onClick={() => {
+              setReportReason("");
+              setReporting({
+                connectionId: profile.connectionId,
+                target: profile.id,
+                kind: "account",
+              });
+              setProfile(null);
+            }}
+          >
+            Report account
+          </button>
           <p>
             {profile.followers} followers · {profile.following} following
           </p>
@@ -1631,7 +1912,11 @@ export function Zing() {
               busy ||
               !conns
                 .find((c) => c.id === profile.connectionId)
-                ?.capabilities.includes("conversations")
+                ?.capabilities.some(
+                  (capability) =>
+                    capability === "conversations" ||
+                    capability === "zing-chat",
+                )
             }
             onClick={() =>
               void act(async () => {
@@ -1651,6 +1936,20 @@ export function Zing() {
       )}
       {postMenu && (
         <Dialog title="Post options" onClose={() => setPostMenu(null)}>
+          <button
+            className="secondary"
+            onClick={() => {
+              setReportReason("");
+              setReporting({
+                connectionId: postMenu.connectionId,
+                target: postMenu.id,
+                kind: "post",
+              });
+              setPostMenu(null);
+            }}
+          >
+            Report post
+          </button>
           <div className="stack">
             {["mute", "block"].map((a) => (
               <button

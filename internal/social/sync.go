@@ -9,6 +9,7 @@ import (
 	"github.com/agim/lidza/packs/jobs"
 	"github.com/agim/lidza/packs/realtime"
 	"time"
+	"zing/internal/atview"
 )
 
 type syncPayload struct{ Owner, Connection string }
@@ -64,6 +65,11 @@ func RegisterSync(s *lidza.Services) error {
 		session, e := Load(ctx, p.Owner, p.Connection)
 		if e != nil {
 			return nil
+		}
+		if session.LocalView {
+			if e = atview.Refresh(ctx, session); e != nil {
+				return e
+			}
 		}
 		feed, e := session.Feed(ctx, "", "")
 		if e != nil {

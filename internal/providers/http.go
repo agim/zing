@@ -19,6 +19,7 @@ import (
 	"github.com/agim/lidza"
 	"github.com/agim/lidza/pkg/env"
 	"github.com/agim/lidza/pkg/router"
+	"zing/schema"
 )
 
 func PublicIP(ip netip.Addr) bool {
@@ -79,12 +80,20 @@ func Client() *http.Client {
 }
 
 // Session is server-only. Never return or log this type.
-type HostedActor struct{ DID, Handle string }
+
+type ReadView interface {
+	Feed(context.Context, string, string) (schema.FeedPage, error)
+	Profile(context.Context, string) (schema.SocialAccount, error)
+	Post(context.Context, string) (schema.SocialPost, error)
+	People(context.Context, string) ([]schema.SocialAccount, error)
+	Notifications(context.Context) ([]schema.NotificationView, error)
+}
 
 type Session struct {
+	View                                              ReadView
+	Written                                           *Ref
 	Hosted                                            bool
 	LocalView                                         bool
-	Actors                                            []HostedActor
 	Auth                                              func(*http.Request) (*http.Response, error)
 	Proxy                                             string
 	Network, Server, Subject, Handle, Access, Refresh string

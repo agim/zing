@@ -94,7 +94,7 @@ func CreateHostedIdentity(ctx context.Context, req *router.Request[schema.Hosted
 	var out schema.HostedIdentityView
 	in := req.Body
 	in.Username = strings.ToLower(strings.TrimSpace(in.Username))
-	if !usernamePattern.MatchString(in.Username) || (in.Network == "bluesky" && strings.Contains(in.Username, "_")) {
+	if in.Username == "zingmoderator" || !usernamePattern.MatchString(in.Username) || (in.Network == "bluesky" && strings.Contains(in.Username, "_")) {
 		return out, router.Errorf(422, "Use lowercase letters and numbers; ActivityPub also supports underscores")
 	}
 	v, origin, e := configuration(in.Network)
@@ -249,7 +249,7 @@ func provision(ctx context.Context, v map[string]string, origin string, id schem
 		if e != nil {
 			return s, e
 		}
-		body, marshalErr := json.Marshal(map[string]string{"id": id.ID, "username": id.Username, "email": email, "password": password})
+		body, marshalErr := json.Marshal(map[string]string{"id": id.ID, "username": id.Username, "email": id.ID + "@accounts.invalid", "password": password})
 		if marshalErr != nil {
 			return s, marshalErr
 		}

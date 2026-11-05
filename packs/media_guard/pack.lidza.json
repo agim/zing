@@ -1,0 +1,20 @@
+{
+  "name": "media_guard",
+  "version": "0.1.0",
+  "description": "Validate and canonicalize uploaded images inside bounded WASM",
+  "rust": {
+    "dir": "rust",
+    "memory_mb": 256,
+    "instances": 2,
+    "timeout_ms": 5000
+  },
+  "capabilities": [
+    {
+      "name": "sanitize_image",
+      "description": "Decode a bounded still image, resize to 1400 pixels, strip metadata and return canonical PNG",
+      "input": "ImageGuardInput",
+      "output": "ImageGuardOutput",
+      "rules": "PNG/JPEG/WebP/still GIF only; at most 8 MiB compressed and 16 million source pixels; no animation."
+    }
+  ]
+}
