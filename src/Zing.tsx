@@ -727,12 +727,15 @@ export function Zing() {
                     {conns.length
                       ? "Try another network or search."
                       : hosting.data?.networks.some((n) => n.available)
-                        ? "Create a hosted identity and start posting on your own server."
+                        ? hosting.data?.enrollment?.message ||
+                          "Create a hosted identity and start posting on your own server."
                         : "Connect your accounts and bring your conversations together."}
                   </p>
                   <button className="primary" onClick={() => go("Settings")}>
                     {hosting.data?.networks.some((n) => n.available)
-                      ? "Create your hosted identity"
+                      ? hosting.data?.enrollment
+                        ? "View your social identities"
+                        : "Create your hosted identity"
                       : "Connect accounts"}
                   </button>
                 </Empty>
@@ -1514,11 +1517,43 @@ export function Zing() {
               <div className="card form-card">
                 <h2 className="section-title">Your hosted identities</h2>
                 <p className="meta">
-                  Create your social identity here. You can post and follow
-                  people without an account on another server.
+                  One Zing account includes identities on this instance’s
+                  configured social servers. Post and follow people without
+                  signing up elsewhere.
                 </p>
                 {hosting.error && (
                   <p role="alert">Could not load hosted identity settings.</p>
+                )}
+                {hosting.data?.enrollment && (
+                  <div className="notice">
+                    <strong>Automatic account setup</strong>
+                    <p>{hosting.data.enrollment.message}</p>
+                    <div className="row">
+                      <button
+                        className="secondary"
+                        onClick={() => {
+                          void hosting.refetch();
+                          void connections.refetch();
+                        }}
+                      >
+                        Refresh identities
+                      </button>
+                      {hosting.data.enrollment.state === "partial" && (
+                        <button
+                          className="secondary"
+                          disabled={busy}
+                          onClick={() =>
+                            void act(async () => {
+                              await api.retryEnrollment();
+                              refresh("hosting");
+                            }, "Account setup retries queued")
+                          }
+                        >
+                          Retry account setup
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )}
                 {hosting.data?.identities.map((identity) => (
                   <div className="connection" key={identity.id}>
@@ -1553,7 +1588,8 @@ export function Zing() {
                     )}
                   </div>
                 ))}
-                {hosting.data?.networks.some((n) => n.available) ? (
+                {!hosting.data?.enrollment &&
+                hosting.data?.networks.some((n) => n.available) ? (
                   <form
                     className="stack"
                     onSubmit={(event) => {
@@ -1599,11 +1635,11 @@ export function Zing() {
                       Username
                       <input
                         required
-                        minLength={1}
-                        maxLength={30}
+                        minLength={hostedNetwork === "bluesky" ? 3 : 1}
+                        maxLength={hostedNetwork === "bluesky" ? 18 : 30}
                         pattern={
                           hostedNetwork === "bluesky"
-                            ? "[a-z0-9]{1,30}"
+                            ? "[a-z0-9]{3,18}"
                             : "[a-z0-9][a-z0-9_]{0,29}"
                         }
                         autoCapitalize="none"
@@ -1635,7 +1671,9 @@ export function Zing() {
                   </form>
                 ) : (
                   <p className="meta">
-                    The operator has not configured social-server hosting yet.
+                    {hosting.data?.enrollment
+                      ? "Your identities are managed automatically with your Zing account."
+                      : "The operator has not configured social-server hosting yet."}
                   </p>
                 )}
               </div>
@@ -2291,6 +2329,12 @@ function AuthPage({ path, onDone }: { path: string; onDone: () => void }) {
       <p className="meta center">
         <a href="/setup">First-run operator setup</a>
         <br />
+        {mode === "register" && (
+          <span>
+            Your verified Zing signup automatically creates identities on this
+            instance’s configured ActivityPub and Bluesky servers.{" "}
+          </span>
+        )}
         By continuing, you accept the <a href="/terms">terms</a> and{" "}
         <a href="/privacy">privacy policy</a>.
       </p>

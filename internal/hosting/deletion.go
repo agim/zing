@@ -14,6 +14,7 @@ import (
 	"github.com/agim/lidza/pkg/env"
 	"github.com/agim/lidza/pkg/router"
 	"github.com/jackc/pgx/v5"
+	queries "zing/db/queries/gen"
 	"zing/internal/moderation"
 	"zing/internal/providers"
 	"zing/internal/social"
@@ -24,6 +25,12 @@ type deletion struct{ Network, Server, Subject, Username, OperationID, PasswordS
 // QueueDeletion copies only sealed credentials into durable jobs before the
 // auth transaction removes local rows. Failures remain visible to operators.
 func QueueDeletion(ctx context.Context, tx pgx.Tx, owner string) error {
+	if e := queries.New(tx).EnrollmentDelete(ctx, owner); e != nil {
+		return e
+	}
+	if _, e := tx.Exec(ctx, `DELETE FROM job WHERE kind IN ('zing.enrollment','zing.provision-identity') AND (payload->>'ownerId'=$1 OR payload#>>'{}'=$1) AND state IN ('pending','failed')`, owner); e != nil {
+		return e
+	}
 	for _, network := range []string{"mastodon", "bluesky"} {
 		if _, e := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, "hosted:"+owner+":"+network); e != nil {
 			return e

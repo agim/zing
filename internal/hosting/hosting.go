@@ -20,6 +20,7 @@ import (
 	"github.com/agim/lidza/pkg/env"
 	"github.com/agim/lidza/pkg/router"
 	"github.com/jackc/pgx/v5"
+	"zing/internal/moderation"
 	"zing/internal/providers"
 	"zing/internal/social"
 	"zing/schema"
@@ -88,20 +89,39 @@ func Hosting(ctx context.Context, _ *router.Request[router.None]) (schema.Hostin
 		}
 		out.Identities = append(out.Identities, v)
 	}
-	return out, rows.Err()
+	if e = rows.Err(); e != nil {
+		return out, e
+	}
+	rows.Close()
+	out.Enrollment, e = enrollmentView(ctx, social.Owner(ctx), out.Networks, out.Identities)
+	return out, e
 }
 func CreateHostedIdentity(ctx context.Context, req *router.Request[schema.HostedIdentityRequest]) (schema.HostedIdentityView, error) {
+	return createForOwner(ctx, social.Owner(ctx), req.Body)
+}
+func createForOwner(ctx context.Context, owner string, in schema.HostedIdentityRequest) (schema.HostedIdentityView, error) {
 	var out schema.HostedIdentityView
-	in := req.Body
+	p, e := auth.From(ctx).Profile(ctx, owner)
+	if e != nil {
+		return out, e
+	}
+	if !p.Verified() {
+		return out, router.Errorf(403, "Verify your email before creating hosted identities")
+	}
+	if e = moderation.Check(ctx, owner); e != nil {
+		return out, e
+	}
 	in.Username = strings.ToLower(strings.TrimSpace(in.Username))
 	if in.Username == "zingmoderator" || !usernamePattern.MatchString(in.Username) || (in.Network == "bluesky" && strings.Contains(in.Username, "_")) {
 		return out, router.Errorf(422, "Use lowercase letters and numbers; ActivityPub also supports underscores")
+	}
+	if in.Network == "bluesky" && (len(in.Username) < 3 || len(in.Username) > 18) {
+		return out, router.Errorf(422, "Bluesky hosted usernames need 3–18 letters or numbers")
 	}
 	v, origin, e := configuration(in.Network)
 	if e != nil {
 		return out, e
 	}
-	owner := social.Owner(ctx)
 	// Serialize per owner so retries reuse one persisted operation/password.
 	tx, e := db.From(ctx).Begin(ctx)
 	if e != nil {

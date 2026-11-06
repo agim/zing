@@ -19,7 +19,7 @@ Public open-source repository; each installation chooses public/private access. 
 
 ### What are the three to five things people come to do? <!-- brief:journeys -->
 
-Register and verify email; create a hosted social identity; publish and interact locally without an external social account; discover and interact with remote users through supported protocols; compose with images, drafts and schedules; manage privacy and moderation. Existing network connections remain supplementary.
+Register once and verify email; receive hosted identities automatically on every configured supported network; publish and interact locally without an external social account; discover and interact with remote users through supported protocols; compose with images, drafts and schedules; manage privacy and moderation. Existing network connections remain supplementary.
 
 ### What is out of scope for now? <!-- brief:out_of_scope -->
 

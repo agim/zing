@@ -51,13 +51,13 @@ set_policy(
 
 
 # env.Values caches settings briefly. Always restore the previous private policy.
-def wait(fn, label, seconds=60):
+def wait(fn, label, seconds=60, interval=0.3):
     end = time.monotonic() + seconds
     while time.monotonic() < end:
         result = fn()
         if result:
             return result
-        time.sleep(0.3)
+        time.sleep(interval)
     raise AssertionError(label)
 
 
@@ -110,17 +110,38 @@ try:
         token = wait(verification, "SMTP verification")
         check(client.post(base + "/api/v1/auth/verify", data={"token": token}))
         subject = check(client.get(base + "/api/v1/auth/session"))["user"]["subject"]
+
+        def automatic_identities():
+            status = check(client.get(base + "/api/v1/hosting"))
+            if all(
+                any(
+                    i["network"] == n and i["state"] == "active"
+                    for i in status["identities"]
+                )
+                for n in ["bluesky", "mastodon"]
+            ):
+                return status
+
+        automatically_created = wait(
+            automatic_identities, "Verified signup automatic native identities", 90, interval=1
+        )
+        assert automatically_created["enrollment"]["state"] == "active"
         for network in ["bluesky", "mastodon"]:
-            check(
+            identity = next(
+                i
+                for i in automatically_created["identities"]
+                if i["network"] == network
+            )
+            repeated = check(
                 client.post(
                     base + "/api/v1/hosting/identities",
-                    data={
-                        "network": network,
-                        "username": "verify" + uuid.uuid4().hex[:12],
-                    },
+                    data={"network": network, "username": identity["username"]},
                     timeout=60000,
                 )
             )
+            assert (
+                repeated["id"] == identity["id"]
+            ), "Automatic identity changed on an explicit retry"
         connections = check(client.get(base + "/api/v1/connections"))["items"]
         ours = check(operator.request.get(base + "/api/v1/connections"))["items"]
         a = next(c for c in ours if c["hosted"] and c["network"] == "bluesky")

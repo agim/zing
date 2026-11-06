@@ -248,6 +248,12 @@ type Draft struct {
 	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
+type HostedEnrollment struct {
+	OwnerID   string    `json:"owner_id"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type HostedIdentity struct {
 	ID             string    `json:"id"`
 	OwnerID        string    `json:"owner_id"`

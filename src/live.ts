@@ -15,6 +15,7 @@ export function useUserLive(owner: string | undefined, paused: boolean) {
     const refresh = () => {
       for (const key of [
         "feed",
+        "connections",
         "notifications",
         "messages",
         "conversations",

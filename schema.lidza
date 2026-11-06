@@ -562,6 +562,7 @@ type HostedNetworkView {
  domain string
 }
 type HostingStatus {
+ enrollment HostedEnrollmentView?
  networks HostedNetworkView[]
  identities HostedIdentityView[]
 }
@@ -703,4 +704,20 @@ model ModerationDestination {
 
 type AppealRequest {
  reason string @min(1) @max(2000)
+}
+
+// Enrollment belongs to the Zing signup; native credentials remain in identities.
+model HostedEnrollment {
+ ownerId string @id
+ username string @unique
+ createdAt time @default(now())
+}
+type HostedProvisionTask {
+ ownerId string @min(1)
+ network string @min(1) @max(20)
+}
+type HostedEnrollmentView {
+ username string
+ state string
+ message string
 }

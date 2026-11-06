@@ -428,3 +428,9 @@ CREATE TABLE moderation_destination (
 CREATE INDEX moderation_destination_action_id_idx ON moderation_destination (action_id);
 CREATE UNIQUE INDEX moderation_destination_action_id_network_key ON moderation_destination (action_id, network);
 
+CREATE TABLE hosted_enrollment (
+  owner_id text PRIMARY KEY,
+  username text NOT NULL UNIQUE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+

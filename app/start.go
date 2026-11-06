@@ -19,6 +19,9 @@ import (
 func onStart(ctx context.Context, s *lidza.Services) error {
 	publishing.Register(s)
 	hosting.Register(s)
+	if e := hosting.RegisterEnrollment(s); e != nil {
+		return e
+	}
 	chat.Register(s)
 	moderation.Register(s)
 	atview.Register(s)

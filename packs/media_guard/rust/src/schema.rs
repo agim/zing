@@ -560,6 +560,15 @@ pub struct ModerationDestination {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HostedEnrollment {
+    #[serde(rename = "ownerId")]
+    pub owner_id: String,
+    pub username: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Greeting {
     pub name: String,
     pub message: String,
@@ -907,6 +916,7 @@ pub struct HostedNetworkView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct HostingStatus {
+    pub enrollment: Option<HostedEnrollmentView>,
     pub networks: Vec<HostedNetworkView>,
     pub identities: Vec<HostedIdentityView>,
 }
@@ -944,5 +954,19 @@ pub struct ChatAcceptRequest {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AppealRequest {
     pub reason: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HostedProvisionTask {
+    #[serde(rename = "ownerId")]
+    pub owner_id: String,
+    pub network: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HostedEnrollmentView {
+    pub username: String,
+    pub state: String,
+    pub message: String,
 }
 

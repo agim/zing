@@ -118,3 +118,21 @@ Why: Verified operators need cross-account reports, selected sealed evidence, ho
 Touches: internal/moderation/admin.go, app/admin/moderation.html
 
 The generated request-key migration adds a volatile UUID default only to the new moderation action table, introduced empty in the same unreleased module. Initial deployment applies it before accepting traffic. Existing installations of this development module should apply it in a maintenance window; the L021 migration warning is retained for review rather than editing generated SQL.
+
+## 2026-11-06: One verified signup enrolls every configured hosted network
+
+Why: The owner explicitly requested one Zing signup to provide hosted Mastodon-compatible ActivityPub and Bluesky/AT Protocol accounts. Enrollment is persisted in the auth transaction, with a stable generated native username (two ASCII name characters plus 64 random bits, within PDS service-handle limits) and independently unique jobs per owner/network. Native creation waits for verified email and current private-instance authorization. A durable sweep recovers missed events and newly configured networks; exhausted retries require an owner action. Existing pre-enrollment users retain their identities and manual creation path. The already-active network is preserved across retries, restarts and failure of another server. Unsupported commercial services are not represented as provisioned accounts.
+
+Touches: internal/hosting/enrollment.go, schema.lidza, db/queries/enrollment.sql, app/routes.go, src/Zing.tsx
+
+## 2026-11-06: Encrypted quiescent snapshots with isolated restore validation
+
+Why: Database-only backups cannot preserve hosted identities. A consistent recovery boundary includes application and PLC PostgreSQL, native SQLite/repositories/blobs, sealed configuration/master key and application objects. The operator stops all writers first; logical PostgreSQL tools must match the server major. Snapshots use independent age recipients and SHA-256 manifests. Restore requires a trusted inventory hash and a new destination, rejects links/traversal and verifies all files before publishing the extracted directory. Recovery drills use fresh databases/volumes and disable outbound workers while checking native DID/repository continuity and private credential decryption. Recovery identities are never stored in snapshots or source control. S3 installations need matching object-storage snapshots/versioning rather than assuming local files cover remote objects.
+
+Touches: scripts/backup-instance.py, scripts/verify-recovery-local.py, scripts/verify-containers-local.py, cmd/recovery-check
+
+## 2026-11-06: Keep compatible Zod 3 with leading bounds and bounded errors
+
+Why: PDS OAuth uses the Zod 3 refinement API. A version substitution with Zod 4 breaks that API. Reviewing upstream's collection-bound fix showed an error-count cap alone did not prevent expensive element traversal. The scoped v3 backport now rejects oversized array max/exact-length and set max constraints before element work, in both CJS/ESM builds, while retaining the 64-error bound. Regression checks cover async parsing, nested paths, valid input and refinement compatibility. Version-based advisories remain visible and are accepted only for the checksum-pinned, regression-tested patch.
+
+Touches: services/pds/patches, services/dev-plc/patches, services/security/zod-check.mjs

@@ -1032,6 +1032,22 @@ func (v ModerationDestination) Validate() error {
 	return errs.Result()
 }
 
+// HostedEnrollment is a row of the hosted_enrollment table.
+type HostedEnrollment struct {
+	OwnerID   string    `json:"ownerId" db:"owner_id"`
+	Username  string    `json:"username" db:"username"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+}
+
+// Validate applies the rules of HostedEnrollment from schema.lidza.
+func (v HostedEnrollment) Validate() error {
+	var errs validate.Errors
+	if v.Username == "" {
+		errs.Add("username", "required", "required")
+	}
+	return errs.Result()
+}
+
 // Greeting is an API type.
 type Greeting struct {
 	Name    string `json:"name"`
@@ -2004,13 +2020,20 @@ func (v HostedNetworkView) Validate() error {
 
 // HostingStatus is an API type.
 type HostingStatus struct {
-	Networks   []HostedNetworkView  `json:"networks"`
-	Identities []HostedIdentityView `json:"identities"`
+	Enrollment *HostedEnrollmentView `json:"enrollment"`
+	Networks   []HostedNetworkView   `json:"networks"`
+	Identities []HostedIdentityView  `json:"identities"`
 }
 
 // Validate applies the rules of HostingStatus from schema.lidza.
 func (v HostingStatus) Validate() error {
 	var errs validate.Errors
+	if v.Enrollment != nil {
+		x := *v.Enrollment
+		if err := x.Validate(); err != nil {
+			errs.Add("enrollment", "nested", err.Error())
+		}
+	}
 	for _, x := range v.Networks {
 		if err := x.Validate(); err != nil {
 			errs.Add("networks", "nested", err.Error())
@@ -2150,6 +2173,55 @@ func (v AppealRequest) Validate() error {
 	}
 	if len(v.Reason) > 2000 {
 		errs.Add("reason", "max", "at most 2000 character(s)")
+	}
+	return errs.Result()
+}
+
+// HostedProvisionTask is an API type.
+type HostedProvisionTask struct {
+	OwnerID string `json:"ownerId"`
+	Network string `json:"network"`
+}
+
+// Validate applies the rules of HostedProvisionTask from schema.lidza.
+func (v HostedProvisionTask) Validate() error {
+	var errs validate.Errors
+	if v.OwnerID == "" {
+		errs.Add("ownerId", "required", "required")
+	}
+	if len(v.OwnerID) < 1 {
+		errs.Add("ownerId", "min", "at least 1 character(s)")
+	}
+	if v.Network == "" {
+		errs.Add("network", "required", "required")
+	}
+	if len(v.Network) < 1 {
+		errs.Add("network", "min", "at least 1 character(s)")
+	}
+	if len(v.Network) > 20 {
+		errs.Add("network", "max", "at most 20 character(s)")
+	}
+	return errs.Result()
+}
+
+// HostedEnrollmentView is an API type.
+type HostedEnrollmentView struct {
+	Username string `json:"username"`
+	State    string `json:"state"`
+	Message  string `json:"message"`
+}
+
+// Validate applies the rules of HostedEnrollmentView from schema.lidza.
+func (v HostedEnrollmentView) Validate() error {
+	var errs validate.Errors
+	if v.Username == "" {
+		errs.Add("username", "required", "required")
+	}
+	if v.State == "" {
+		errs.Add("state", "required", "required")
+	}
+	if v.Message == "" {
+		errs.Add("message", "required", "required")
 	}
 	return errs.Result()
 }

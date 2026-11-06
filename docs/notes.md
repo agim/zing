@@ -15,3 +15,5 @@ decision (docs/decisions.md).
 
 - 2026-11-05: User approved separate local Zing chat for hosted AT Protocol identities; native connected Bluesky DMs remain separate. User also approved replacing the malformed upload PNG fixture with a valid PNG while retaining all assertions. Rust is used for contained image parsing, while Go/Līdza owns platform behavior.
 - Local moderation uses native GoToSocial/PDS controls; the private agent must remain unreachable from public ingress. The supervisor must acknowledge GoToSocial restarts before reversible account state changes count as confirmed. No deployment has been performed.
+
+- 2026-11-06: Owner requested completing container validation, backup/restore and dependency review locally before deployment. A single new Zing signup must enroll the user automatically on every configured hosted network. Email verification precedes native provisioning; ActivityPub and AT Protocol accounts are independent durable jobs, with partial progress/retry visible in Settings. Threads is not a self-hosted registration service and must never appear provisioned by this enrollment.

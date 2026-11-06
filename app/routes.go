@@ -33,7 +33,7 @@ func routes(r *router.Router) {
 	router.Route(r, "GET /api/v1/hello/{name}", hello)
 	r.HandleFunc("GET /oauth-client-metadata.json", social.BlueskyMetadata)
 	r.HandleFunc("GET /api/v1/connections/bluesky/callback", social.BlueskyCallback)
-	auth.Mount(r, auth.Options{Title: "Zing", RequireVerified: true, VerifyPath: "/verify", ResetPath: "/reset", OnDeleteUser: deleteUser, OnSignUp: installation.SignUp})
+	auth.Mount(r, auth.Options{Title: "Zing", RequireVerified: true, VerifyPath: "/verify", ResetPath: "/reset", OnDeleteUser: deleteUser, OnSignUp: signup, OnEvent: hosting.AuthEvent})
 	admin.Mount(r, admin.Options{Title: "Zing", Templates: lidza.Sub(adminFiles, "admin"), Sections: installation.Sections(), Pages: []admin.Page{installation.Page(), moderation.Page()}})
 	r.HandleFunc("GET /api/v1/connections/callback", social.Callback)
 	appeals := r.Group("/api/v1", auth.Require(), verifiedOnly, installation.Access, accountLimit)
@@ -41,6 +41,7 @@ func routes(r *router.Router) {
 	g := r.Group("/api/v1", auth.Require(), verifiedOnly, installation.Access, accountLimit, moderation.Require)
 	router.Route(g, "POST /api/v1/moderation/reports", report)
 	router.Route(g, "GET /api/v1/hosting", hosting.Hosting)
+	router.Route(g, "POST /api/v1/hosting/retry", hosting.RetryEnrollment)
 	router.Route(g, "POST /api/v1/hosting/identities", hosting.CreateHostedIdentity)
 	router.Route(g, "GET /api/v1/connections", social.Connections)
 	router.Route(g, "POST /api/v1/connections", social.Connect)
@@ -162,4 +163,11 @@ func report(ctx context.Context, req *router.Request[schema.ReportRequest]) (sch
 		return schema.OperationResult{}, e
 	}
 	return moderation.CreateReport(ctx, social.Owner(ctx), s, req.Body)
+}
+
+func signup(ctx context.Context, tx pgx.Tx, s auth.SignUp) error {
+	if e := installation.SignUp(ctx, tx, s); e != nil {
+		return e
+	}
+	return hosting.SignUp(ctx, tx, s)
 }
