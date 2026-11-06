@@ -4,6 +4,7 @@ import argparse
 import collections
 import json
 from pathlib import Path
+from native_runtime_review import verify_native_sources
 
 ROOT = Path(__file__).resolve().parent.parent
 IMAGES = ("app", "activitypub", "pds", "plc", "postgres", "valkey")
@@ -87,6 +88,13 @@ def main():
     args = parser.parse_args()
     policy = json.loads((ROOT / "services/security/runtime-review.json").read_text())
     report = verify(args.reports, policy)
+    source_policy = json.loads(
+        (ROOT / "services/security/native-runtime-review.json").read_text()
+    )
+    report["nativeSourceReview"] = verify_native_sources(args.reports, source_policy)
+    report["failures"].extend(report["nativeSourceReview"]["failures"])
+    if report["failures"]:
+        report["status"] = "failed"
     if args.out:
         args.out.write_text(json.dumps(report, indent=2) + "\n")
     print(

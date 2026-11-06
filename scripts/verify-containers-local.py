@@ -2,7 +2,7 @@
 """Disposable Compose acceptance. Uses fresh fixture secrets, no public identities.
 Needs Docker + Compose v2.24+, age, and a local free loopback port.
 """
-import argparse, hashlib, http.cookiejar, importlib.util, io, json, os, pathlib, re, secrets, subprocess, tarfile, tempfile, time, urllib.request, uuid
+import argparse, traceback, hashlib, http.cookiejar, importlib.util, io, json, os, pathlib, re, secrets, subprocess, tarfile, tempfile, time, urllib.request, uuid
 
 from container_bridge import Bridge
 
@@ -13,7 +13,16 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--no-build", action="store_true")
 parser.add_argument("--port", type=int, default=13000)
 parser.add_argument("--proxy")
+parser.add_argument(
+    "--baseline-pds-image",
+    help="Existing glibc image used before the candidate upgrade",
+)
+parser.add_argument("--baseline-plc-image", help="Matching baseline PLC fixture image")
 args = parser.parse_args()
+if bool(args.baseline_pds_image) != bool(args.baseline_plc_image) or (
+    args.baseline_pds_image and not args.no_build
+):
+    parser.error("Baseline upgrade checks require both baseline images and --no-build")
 run_id = uuid.uuid4().hex[:10]
 project = "zing-acceptance-" + run_id
 recovery_project = "zing-recovered-" + run_id
@@ -66,6 +75,21 @@ def docker(*cmd, input=None, log=False):
     return result.stdout
 
 
+using_baseline = bool(args.baseline_pds_image)
+baseline_override = work / "baseline.json"
+if using_baseline:
+    baseline_override.write_text(
+        json.dumps(
+            {
+                "services": {
+                    "pds": {"image": args.baseline_pds_image},
+                    "plc": {"image": args.baseline_plc_image},
+                }
+            }
+        )
+    )
+
+
 def compose(*cmd, clone=False, extra=None, input=None, log=False):
     command = [
         "compose",
@@ -76,6 +100,8 @@ def compose(*cmd, clone=False, extra=None, input=None, log=False):
     ]
     for file in files:
         command += ["-f", file]
+    if using_baseline and not clone:
+        command += ["-f", str(baseline_override)]
     if extra:
         command += ["-f", str(extra)]
     return docker(*command, *cmd, input=input, log=log)
@@ -164,6 +190,23 @@ def snapshot_counts(clone=False):
 def native_blob(url, clone=False):
     js = "fetch(process.argv[1]).then(async r=>{if(!r.ok)process.exit(1);process.stdout.write(Buffer.from(await r.arrayBuffer()))}).catch(()=>process.exit(1))"
     return compose("exec", "-T", "pds", "/nodejs/bin/node", "-e", js, url, clone=clone)
+
+
+def native_record(post, clone=False):
+    parts = post["id"].split("/")
+    assert post["id"].startswith("at://") and len(parts) == 5
+    url = "http://pds:2583/xrpc/com.atproto.repo.getRecord?" + urllib.parse.urlencode(
+        {"repo": parts[2], "collection": parts[3], "rkey": parts[4]}
+    )
+    try:
+        record = json.loads(native_blob(url, clone))
+    except RuntimeError:
+        return False
+    return (
+        record.get("uri") == post["id"]
+        and record.get("cid") == post["cid"]
+        and record.get("value", {}).get("text") == post["text"]
+    )
 
 
 def postgres_ready(clone=False):
@@ -356,6 +399,10 @@ try:
     assert len(posts) == 2
     bsky = next(p for p in posts if p["network"] == "bluesky")
     assert native_blob(bsky["images"][0]) == canonical
+    assert native_record(bsky)
+    if using_baseline:
+        using_baseline = False
+        compose("up", "-d", "--no-deps", "--force-recreate", "pds", "plc", log=True)
     compose("restart", "app", "activitypub", "pds", log=True)
     wait(ready, "persistent restart")
     wait(
@@ -369,6 +416,14 @@ try:
         == 2,
         "retained source posts",
     )
+    wait(
+        lambda: native_record(bsky),
+        "native repository URI/CID after restart or upgrade",
+    )
+    assert native_blob(bsky["images"][0]) == canonical
+    assert {c["id"] for c in api("connections")["items"]} == {
+        c["id"] for c in connections
+    }
     # Quiesce every application/native writer before the backup boundary.
     compose("stop", "app", "activitypub", "pds", "plc", log=True)
     expected = snapshot_counts()
@@ -554,6 +609,7 @@ print(count)
         assert {p["id"] for p in restored_posts} == {p["id"] for p in posts}
         restored_bsky = next(p for p in restored_posts if p["network"] == "bluesky")
         assert native_blob(restored_bsky["images"][0], True) == canonical
+        assert native_record(restored_bsky, True)
         with client.open(base + "/api/v1/media/" + media["id"]) as r:
             assert r.read() == canonical
         assert pg("SELECT count(*) FROM job WHERE state='running'", True) == "0"
@@ -568,11 +624,13 @@ print(count)
             "duplicateIdentityPrevention": True,
             "nativeMediaPublishing": True,
             "persistentRestart": True,
+            "glibcToMuslUpgradePreservesNativeData": bool(args.baseline_pds_image),
             "encryptedBackupAndFreshVolumeRestore": True,
             "restoredDatabaseCountsMatch": True,
             "allTablesInBothDatabasesCompared": True,
             "nativeSQLiteStoresChecked": sum(sqlite_checked.values()),
             "nativePostIdsAndBlobBytesPreserved": True,
+            "nativeRepositoryURIsAndCIDsVerifiedDirectly": True,
             "privateMediaAccessPreserved": True,
             "restoredWorkersDisabled": True,
         }
@@ -582,6 +640,7 @@ print(count)
         )
         print(json.dumps(report))
 except Exception:
+    (work / "failure.log").write_text(traceback.format_exc())
     try:
         compose(
             "logs",

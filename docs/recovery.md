@@ -76,3 +76,11 @@ publications before enabling workers to avoid duplicating upstream posts. Keep a
 previous verified application image for compatible application rollback; never
 run destructive down migrations automatically. Keep routine encrypted off-host
 backup retention and repeat drills after schema/native-server upgrades.
+
+
+For a Node runtime ABI change, preserve the previous PDS/PLC image tags and add
+`--no-build --baseline-pds-image OLD_PDS_TAG --baseline-plc-image OLD_PLC_TAG` to
+the container acceptance command. It creates/publishes using the baseline,
+upgrades both processes on those same volumes, checks native URI/CID continuity,
+and then performs encrypted recovery with the candidate images. Run the default
+fresh-install journey separately to validate new account creation and writes.

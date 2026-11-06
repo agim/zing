@@ -15,12 +15,13 @@ version-only advisories cannot detect a local patch.
   compatible Go dependency graph. Corresponding source/build/license information
   ships in the image. Its Python supervisor uses a current minimal Alpine runtime
   without unused pip. The rebuilt image's scan reports no vulnerabilities.
-- PDS: production dependencies only; build/package-manager caches stay out of the
-  runtime. Node and its actual C++/GCC shared-library dependencies run on the
-  maintained distroless base-nossl image. Package metadata and copyright files
-  remain present. Unused system zlib/OpenSSL/OpenMP libraries are excluded rather
-  than hiding their advisories. Read-only/capability-dropped runtime passes its
-  actual backport checks and native SQLite load/query.
+- PDS/PLC: Node 24.22.2 on musl, built from the official Alpine image into a
+  six-package runtime root. GNU libc and compatibility shims are absent. Native
+  SQLite is compiled for musl using the matching Node headers. The scratch
+  runtime contains no shell, compiler or package manager; package metadata,
+  certificates, timezone data and licenses remain present. pnpm 10.34.5 is used
+  only during builds. Native SQLite, TLS trust/rejection and elliptic-curve
+  crypto checks pass under a non-root/read-only/capability-dropped runtime.
 - PostgreSQL: official PostgreSQL 17.11 Alpine server and entrypoint; rebuild its
   unchanged gosu 1.19 helper using Go 1.27 and patched moby/sys/user and x/sys.
   Full corresponding helper source/license is retained in the image. Its new
@@ -35,49 +36,47 @@ native image publishing, encrypted restore into fresh volumes, every table in
 both databases, five native SQLite integrity checks, preserved IDs/blob bytes
 and private media access, with restored outbound workers disabled.
 
-## Residual PDS runtime findings
+## Remaining source-level findings
 
-Current minimal PDS and local-fixture PLC images: each has 29 medium and 8 low
-version-based Debian findings;
-zero high/critical findings. Debian reports no fixed package version for these
-entries. They remain in the raw report and are not described as patched.
+The new PDS/PLC image scans report no vulnerabilities. This does **not** erase
+known issues that Alpine's scanner feed does not list. The source review is
+independent of the distribution scan and records four remaining GCC issues.
 
-The remaining packages are libc6, gcc-14-base, libgcc-s1 and libstdc++6. Their
-source-package association can produce multiple rows for one issue. Review is
-specific to the tested Linux amd64 image:
+The old images had 37 package findings each, representing 27 distinct CVEs:
+22 in GNU libc and five in the GCC source package. The 22 GNU libc issues no
+longer describe shipped code: the library, loader and compatibility shims are
+absent. Runtime checks verify the musl loader and lack of glibc; this is actual
+component removal rather than a change in scanner labels.
 
-- The affected glibc monetary-formatting, tree deletion, deprecated DNS-printing,
-  word expansion, gettext, iconv, glob and POSIX-regex functions are not directly
-  imported by the inspected Node executable or native SQLite addon. Node uses
-  its own JS regex/ICU conversion facilities. This narrows the observed surface;
-  absence of a direct import does not prove absence of an indirect/dynamic call.
-- nscd is not installed; the loader privilege-escalation cases require setuid/
-  setgid execution, while these services run as fixed non-root users with
-  no-new-privileges and dropped capabilities. Resolver configuration, LANGUAGE
-  and other process environment values belong to the operator, not HTTP users.
-- The strncasecmp advisory describes the Power8 optimization; the inspected
-  runtime is amd64. This conclusion must be revisited for another architecture.
-- The GCC-family alerts concern particular C++ priority-queue/parallel-search,
-  boolean-vector, wide-bitset and aligned-allocation paths. Their affected
-  template/allocation conditions have not been established as reachable through
-  a native HTTP request. These are reviewed residual memory-safety/DoS findings, not
-  proof of non-affectation. Native body limits, bounded Zod traversal and runtime
-  isolation reduce exposure but do not replace upstream fixes.
-- The low glibc mitigation-bypass/ASLR entries require an additional memory
-  corruption condition or operator execution of an attacker-provided ELF; the
-  service never accepts binaries for execution. They remain visible.
+CVE-2026-95619 affects aligned allocation paths which round sizes; upstream
+explicitly distinguishes the POSIX allocation path used here. The build checks
+normal alignment and rejection of near-SIZE_MAX requests, then requires the
+runtime libstdc++ bytes to match the tested library. See the
+[upstream fix and platform explanation](https://github.com/gcc-mirror/gcc/commit/638de129df3a22917ff2eda13bd0fd861ca9befc).
 
-Upstream issue status is available from the distribution's primary tracker, for
-example [glibc findings](https://security-tracker.debian.org/tracker/source-package/glibc)
-and [GCC findings](https://security-tracker.debian.org/tracker/source-package/gcc-14).
-The distribution marks the reviewed GCC cases as minor/no-dsa in stable; some
-have fixes only in newer development packages, while others remain unfixed.
-See, for example, [aligned allocation](https://security-tracker.debian.org/tracker/CVE-2026-95619)
-and [parallel search](https://security-tracker.debian.org/tracker/CVE-2026-114690).
-A change of libc/compiler distribution merely to obtain a different scan feed
-would not establish that these paths were fixed. Recheck fixes and reachability
-before production. Local acceptance is complete with these explicit residuals;
-this review does not claim a vulnerability-free Node runtime.
+The following remain conservatively tracked against GCC 15.2.0-r5 and consumer
+builds. An affected native HTTP request path has not been established; that is
+not a claim of non-affectation.
+
+| Finding | Component | What is still needed |
+| --- | --- | --- |
+| [CVE-2026-102010](https://security-tracker.debian.org/tracker/CVE-2026-102010) | GNU binary-heap priority queue erase_if | The upstream fix must reach the matching stable toolchain and affected consumer builds. |
+| [CVE-2026-114690](https://security-tracker.debian.org/tracker/CVE-2026-114690) | GNU parallel-search bounds | Upstream patch exists; it is not carried by the pinned stable toolchain. |
+| [CVE-2026-114691](https://security-tracker.debian.org/tracker/CVE-2026-114691) | Oversized vector<bool> construction | Compiler headers and affected consumers need the upstream correction. |
+| [CVE-2026-115455](https://security-tracker.debian.org/tracker/CVE-2026-115455) | Wide-character bitset extraction | Upstream patch exists; it is not carried by the pinned stable toolchain. |
+
+The [Alpine compiler recipe](https://github.com/alpinelinux/aports/blob/3.24-stable/main/gcc/APKBUILD)
+records the stable package and patches. Replacing just a shared library cannot
+establish a fix for template code already compiled into Node. Mixing unstable
+libraries or making a private V8/compiler fork is not a safe maintenance update.
+These four items therefore stay visible pending maintained upstream
+compiler/Node builds, with reachability and source status rechecked before
+production. No deployment has been performed.
+
+The [Node 24.22.2 release](https://nodejs.org/en/blog/release/v24.22.2) includes V8
+and stream backports. [pnpm 10.34.5](https://github.com/pnpm/pnpm/releases/tag/v10.34.5)
+also closes build-time path traversal cases. The scoped Zod/deepmerge backports
+below retain their original version alerts.
 
 ## Compatible Node backports
 
@@ -99,6 +98,9 @@ json`, retaining complete reports named `app.json`, `activitypub.json`, `pds.jso
 `plc.json`, `postgres.json` and `valkey.json` in a private report directory. The PLC
 image is the isolated local fixture, not a production public identity directory.
 Record each ImageID/digest and the scanner database date with release evidence.
+Also collect `pds-runtime.json` and `plc-runtime.json` with each exact ImageID
+and the JSON from `services/security/node-runtime-check.mjs --tls` (plus `--pds`
+for PDS), using a disposable local TLS fixture; never export its private key.
 
 ```sh
 python3 scripts/verify-image-security.py --reports /private/image-reports \
@@ -114,4 +116,16 @@ fixed versions, increased severity, missing images and unreviewed architectures
 fail; high/critical/unknown findings always fail. Negative regression checks
 exercise those failures. This is a reviewed-residual policy, not a scanner ignore
 file, fabricated version upgrade or claim that affected code has been patched.
-Linux amd64 is the validated platform; other architectures need their own review.
+`services/security/native-runtime-review.json` adds a mandatory cross-distribution
+source review: exact runtime inventory and matching per-image TLS/crypto/SQLite
+proof are required. The four upstream risks remain in the output even with a
+clean scanner feed. Tests reject glibc compatibility shims, mismatched image
+proof and failed TLS checks. The earlier distribution findings remain in
+`runtime-review.json` as rollback-baseline evidence; they cannot bypass the
+candidate's required musl checks.
+
+The upgrade journey starts from the previous glibc PDS/PLC images, creates real
+native accounts and posts, then replaces both processes on the same volumes
+before encrypted fresh-volume recovery. Native repository URIs/CIDs are checked
+directly against PDS, beyond the app's read model. Linux amd64 is the validated
+platform; other architectures need their own review.

@@ -1,0 +1,20 @@
+{
+  "reviewedOn": "2026-11-06",
+  "node": "v24.22.2",
+  "packages": {"musl": "1.2.6-r3", "libstdc++": "15.2.0-r5", "libgcc": "15.2.0-r5", "libatomic": "15.2.0-r5"},
+  "removedComponent": "GNU libc is absent, including its loader and compatibility shims; its 22 distinct findings no longer describe shipped code.",
+  "alignedAllocation": {
+    "id": "CVE-2026-95619",
+    "disposition": "POSIX allocation path; upstream says modern posix_memalign targets are unaffected",
+    "evidence": "Build regression rejects near-SIZE_MAX allocations and checks normal alignment. Its libstdc++ bytes must match the runtime root.",
+    "source": "https://github.com/gcc-mirror/gcc/commit/638de129df3a22917ff2eda13bd0fd861ca9befc"
+  },
+  "upstreamResiduals": [
+    {"id":"CVE-2026-102010","component":"GNU binary-heap priority queue erase_if","status":"Upstream fix exists; Alpine stable 15.2.0-r5 does not carry it. Node/compiler builds need to incorporate it. No affected request path established; not a non-affectation claim.","source":"https://security-tracker.debian.org/tracker/CVE-2026-102010"},
+    {"id":"CVE-2026-114690","component":"GNU parallel search buffer bounds","status":"Upstream patch exists, but the matching stable toolchain does not carry it. No affected request path established; not a non-affectation claim.","source":"https://security-tracker.debian.org/tracker/CVE-2026-114690"},
+    {"id":"CVE-2026-114691","component":"std::vector<bool> oversized constructor","status":"Upstream patch exists, but the matching stable toolchain does not carry it. Template code can be compiled into consumers; replacing only a shared library cannot establish a fix.","source":"https://security-tracker.debian.org/tracker/CVE-2026-114691"},
+    {"id":"CVE-2026-115455","component":"wide-character bitset extraction","status":"Upstream patch exists, but the matching stable toolchain does not carry it. No affected request path established; not a non-affectation claim.","source":"https://security-tracker.debian.org/tracker/CVE-2026-115455"}
+  ],
+  "source": "https://github.com/alpinelinux/aports/blob/3.24-stable/main/gcc/APKBUILD",
+  "sourceOffer": "GCC 15.2.0 sources and Alpine patches: https://gcc.gnu.org/pub/gcc/releases/gcc-15.2.0/ and the Alpine aports gcc recipe. COPYING3 and COPYING.RUNTIME are shipped with the runtime."
+}

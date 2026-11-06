@@ -149,3 +149,10 @@ Touches: Dockerfile, services/activitypub/security, services/postgres, services/
 Why: The full acceptance run must prove native signup and data continuity without borrowing live credentials, existing volumes or public identities. Each fixture generates its own keys, requires SMTP verification, injects PDS failure/app restart, publishes real canonical media to both native servers and then quiesces writers. Recovery restores all PostgreSQL tables and native volumes into another project, verifies every SQLite store and source ID/blob/private media, and keeps outbound workers disabled. Linux loopback ingress reaches an internal Docker network without opening an outbound gateway. PostgreSQL readiness uses a real TCP query to avoid the temporary init server. Native-profile and archive-rejection drills are separate corroborating checks.
 
 Touches: deploy/compose.acceptance.yaml, scripts/verify-containers-local.py, scripts/container_bridge.py, scripts/verify-recovery-local.py
+
+
+## 2026-11-06: Remove GNU libc from native Node runtimes with upgrade proof
+
+Why: The owner asked to fix safe remaining PDS/PLC findings. Node 24.22.2 and pnpm 10.34.5 are compatible patch updates. A musl runtime removes GNU libc's affected code without mixing unstable distribution libraries; better-sqlite3 is rebuilt for the new ABI. The minimal scratch root retains real APK metadata/licenses, certificates and timezone data while excluding shell/build tools. TLS, crypto, SQLite and non-root/read-only checks precede both a fresh-install journey and an upgrade using existing glibc-created identities/posts/volumes. A POSIX aligned-allocation regression plus runtime library byte comparison addresses the platform-specific GCC case. Four C++ source findings remain visible independently of scanner coverage; swapping distributions is not evidence that compiled templates were fixed.
+
+Touches: services/pds/Dockerfile, services/dev-plc/Dockerfile, services/security, scripts/native_runtime_review.py, scripts/verify-containers-local.py

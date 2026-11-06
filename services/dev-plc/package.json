@@ -2,7 +2,7 @@
   "name": "zing-local-plc",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.34.1",
+  "packageManager": "pnpm@10.34.5",
   "dependencies": {
     "@did-plc/server": "file:../vendor/plc-server-29f1a70.tgz"
   },
