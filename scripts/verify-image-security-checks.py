@@ -3,6 +3,8 @@
 import copy
 import importlib.util
 import json
+import subprocess
+import sys
 from pathlib import Path
 import tempfile
 
@@ -124,6 +126,16 @@ with tempfile.TemporaryDirectory(prefix="zing-native-review-") as folder:
         "failures"
     ], "Missing runtime evidence admitted"
 
+backport_checks = subprocess.run(
+    [sys.executable, str(ROOT / "scripts/verify-node-backports-checks.py")],
+    capture_output=True,
+    text=True,
+    check=True,
+)
+assert (
+    json.loads(backport_checks.stdout)["status"] == "ok"
+), "Native rebuild gate regressions failed"
+
 print(
     json.dumps(
         {
@@ -137,6 +149,7 @@ print(
             "cleanScannerFeedRetainsSourceRisks": True,
             "glibcShimRejected": True,
             "runtimeEvidenceBoundToImage": True,
+            "nativeConsumerRebuildProofRequired": True,
         }
     )
 )

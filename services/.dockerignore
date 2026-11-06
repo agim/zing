@@ -3,3 +3,5 @@
 **/.env
 **/.env.*
 **/target
+# Documentation does not invalidate the expensive compiler proof/build cache.
+security/gcc15/README.md

@@ -1,0 +1,9 @@
+{
+  "nodeSourceSha256": "8fe2ec1723bb9f8d0b683907c82708debbeda64af21cb2aa214c4241eed0a061",
+  "headers": {
+    "heap": {"patchSha256": "7b703b0b9b5af62245571883390bbf82d3d8c717c600aa611f1721751f3079d0", "headerSha256": "5cb293d1635272502063885030ff124452fa837c855c39b60a293e9aa08764c0"},
+    "search": {"patchSha256": "03283e7d62894a9edd8cf4b92f7ac758bc8b263946b08f5bd14887bb269ce31b", "headerSha256": "4473e64ebeadc4a6c6e57b18d109722901deee27381d1a7f5fbadb32d90de9da"},
+    "vector": {"patchSha256": "1629f2f44cf6364dd46881d5a2d2323e3f182ce62fafca1fa468a236eea13ab3", "headerSha256": "329f7e89e2f6dace8202b906ffd580d470a48b8dfbaf17ab660ebc580d91851c"},
+    "bitset": {"patchSha256": "e2e48abd551fa659174294002a0c7387a51c09d5dc90b382d3819cafed2b7f2f", "headerSha256": "8a3d00f34c7e370417e1abbedad48e38a32c7ae88806abb2f21954f8acf791ee"}
+  }
+}

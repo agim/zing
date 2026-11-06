@@ -93,6 +93,25 @@ def main():
     )
     report["nativeSourceReview"] = verify_native_sources(args.reports, source_policy)
     report["failures"].extend(report["nativeSourceReview"]["failures"])
+    from node_backport_review import verify_backports
+
+    backports = json.loads(
+        (ROOT / "services/security/node-backports-policy.json").read_text()
+    )
+    report["localBackportReview"] = verify_backports(args.reports, backports)
+    report["failures"].extend(report["localBackportReview"]["failures"])
+    if (
+        not report["nativeSourceReview"]["failures"]
+        and not report["localBackportReview"]["failures"]
+    ):
+        report["nativeSourceReview"][
+            "status"
+        ] = "locally_backported_with_vendor_advisories_retained"
+        report["nativeSourceReview"]["localDisposition"] = (
+            "All four template findings are backported into rebuilt consumers. "
+            "The distribution package versions/advisories remain tracked; "
+            "they are not evidence of a patched prebuilt Node binary."
+        )
     if report["failures"]:
         report["status"] = "failed"
     if args.out:

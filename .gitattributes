@@ -2,3 +2,5 @@
 docs/decisions.md merge=union
 CHANGELOG.md merge=union
 db/schema.lock.json merge=lidza-lock
+# Upstream unified diffs retain context prefixes and byte-for-byte patch hashes.
+services/security/gcc15/patches/*.patch whitespace=-blank-at-eol,-space-before-tab
