@@ -174,23 +174,23 @@ def backup(config, out, recipient, quiesced):
         with tarfile.open(archive, "w:gz") as tar:
             for p in sorted(root.rglob("*")):
                 tar.add(p, arcname=p.relative_to(root), recursive=False)
-        partial = out.with_suffix(out.suffix + ".partial")
-        try:
-            run(
-                [
-                    "age",
-                    "--encrypt",
-                    "--recipient",
-                    recipient,
-                    "--output",
-                    str(partial),
-                    str(archive),
-                ]
-            )
-            os.chmod(partial, 0o600)
-            partial.replace(out)
-        finally:
-            partial.unlink(missing_ok=True)
+        cipher = pathlib.Path(temp) / "snapshot.age"
+        run(
+            [
+                "age",
+                "--encrypt",
+                "--recipient",
+                recipient,
+                "--output",
+                str(cipher),
+                str(archive),
+            ]
+        )
+        os.chmod(cipher, 0o600)
+        # Both paths share the output filesystem. Publish atomically without
+        # replacing a snapshot created by another backup process meanwhile.
+        os.link(cipher, out)
+
     return {
         "encrypted": True,
         "databaseCount": len(counts),

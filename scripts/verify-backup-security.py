@@ -37,6 +37,26 @@ with tempfile.TemporaryDirectory(prefix="zing-backup-security-") as folder:
     inventory = b.backup(config, archive, recipient, True)
     assert inventory["sha256"] == b.digest(archive)
     rejected(lambda: b.backup(config, archive, recipient, True))
+    original_run = b.run
+    competing = root / "competing.age"
+
+    def concurrent_publish(args, **kwargs):
+        result = original_run(args, **kwargs)
+        if args[0] == "age" and "--encrypt" in args:
+            competing.write_bytes(b"other backup must survive")
+        return result
+
+    b.run = concurrent_publish
+    try:
+        try:
+            b.backup(config, competing, recipient, True)
+        except FileExistsError:
+            pass
+        else:
+            raise AssertionError("Concurrent backup overwritten")
+        assert competing.read_bytes() == b"other backup must survive"
+    finally:
+        b.run = original_run
     destination = root / "restored"
     b.restore(archive, identity, destination, inventory["sha256"])
     assert (destination / "paths/fixture").read_text() == "private fixture"
@@ -97,6 +117,7 @@ print(
             "roundTrip": True,
             "quiescentBoundaryRequired": True,
             "overwriteRejected": True,
+            "concurrentBackupPreserved": True,
             "inventoryMismatchRejected": True,
             "ciphertextTamperRejected": True,
             "pathTraversalRejected": True,

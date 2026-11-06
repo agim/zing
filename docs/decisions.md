@@ -133,6 +133,6 @@ Touches: scripts/backup-instance.py, scripts/verify-recovery-local.py, scripts/v
 
 ## 2026-11-06: Keep compatible Zod 3 with leading bounds and bounded errors
 
-Why: PDS OAuth uses the Zod 3 refinement API. A version substitution with Zod 4 breaks that API. Reviewing upstream's collection-bound fix showed an error-count cap alone did not prevent expensive element traversal. The scoped v3 backport now rejects oversized array max/exact-length and set max constraints before element work, in both CJS/ESM builds, while retaining the 64-error bound. Regression checks cover async parsing, nested paths, valid input and refinement compatibility. Version-based advisories remain visible and are accepted only for the checksum-pinned, regression-tested patch.
+Why: PDS OAuth uses the Zod 3 refinement API. A version substitution with Zod 4 breaks that API. Reviewing upstream's collection-bound fix showed an error-count cap alone did not prevent expensive element traversal. The locally prepared extension to the scoped v3 backport rejects oversized array max/exact-length and set max constraints before element work, in both CJS/ESM builds, while retaining the 64-error bound. This extension still requires the complete clean-install PLC/container acceptance gate. Regression checks cover async parsing, nested paths, valid input and refinement compatibility. Version-based advisories remain visible and are accepted only for the checksum-pinned, regression-tested patch.
 
 Touches: services/pds/patches, services/dev-plc/patches, services/security/zod-check.mjs
