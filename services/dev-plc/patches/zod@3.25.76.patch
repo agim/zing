@@ -24,3 +24,63 @@ index 91b2afb81b4358fb84d637bc963a868517c6a516..c9e268d6da884a63b3b8e258c2f74d69
      const overrideMap = getErrorMap();
      const issue = makeIssue({
          issueData: issueData,
+diff --git a/v3/types.cjs b/v3/types.cjs
+index 11ed4dfc4745f9af1f1501874576b78b77d294ef..6aa4c81eec61e3962996e8dd00f61e69a77c1f31 100644
+--- a/v3/types.cjs
++++ b/v3/types.cjs
+@@ -1790,6 +1790,7 @@ class ZodArray extends ZodType {
+                     exact: true,
+                     message: def.exactLength.message,
+                 });
++                if (tooBig) return parseUtil_js_1.INVALID; // Check upper bounds before decoding any element.
+                 status.dirty();
+             }
+         }
+@@ -1816,7 +1817,7 @@ class ZodArray extends ZodType {
+                     exact: false,
+                     message: def.maxLength.message,
+                 });
+-                status.dirty();
++                return parseUtil_js_1.INVALID; // GHSA-mrhx-c7xc-m3w5: reject oversized collections before parsing.
+             }
+         }
+         if (ctx.common.async) {
+@@ -2843,7 +2844,7 @@ class ZodSet extends ZodType {
+                     exact: false,
+                     message: def.maxSize.message,
+                 });
+-                status.dirty();
++                return parseUtil_js_1.INVALID; // Reject oversized sets before element validation.
+             }
+         }
+         const valueType = this._def.valueType;
+diff --git a/v3/types.js b/v3/types.js
+index 40b11c0f01b2af54e0ed48e198607bd8836d9a63..6dcdb7e2adc8f335915db533b34d9cb3c2a542ff 100644
+--- a/v3/types.js
++++ b/v3/types.js
+@@ -1769,6 +1769,7 @@ export class ZodArray extends ZodType {
+                     exact: true,
+                     message: def.exactLength.message,
+                 });
++                if (tooBig) return INVALID; // Check upper bounds before decoding any element.
+                 status.dirty();
+             }
+         }
+@@ -1795,7 +1796,7 @@ export class ZodArray extends ZodType {
+                     exact: false,
+                     message: def.maxLength.message,
+                 });
+-                status.dirty();
++                return INVALID; // GHSA-mrhx-c7xc-m3w5: reject oversized collections before parsing.
+             }
+         }
+         if (ctx.common.async) {
+@@ -2814,7 +2815,7 @@ export class ZodSet extends ZodType {
+                     exact: false,
+                     message: def.maxSize.message,
+                 });
+-                status.dirty();
++                return INVALID; // Reject oversized sets before element validation.
+             }
+         }
+         const valueType = this._def.valueType;

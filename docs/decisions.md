@@ -133,6 +133,19 @@ Touches: scripts/backup-instance.py, scripts/verify-recovery-local.py, scripts/v
 
 ## 2026-11-06: Keep compatible Zod 3 with leading bounds and bounded errors
 
-Why: PDS OAuth uses the Zod 3 refinement API. A version substitution with Zod 4 breaks that API. Reviewing upstream's collection-bound fix showed an error-count cap alone did not prevent expensive element traversal. The locally prepared extension to the scoped v3 backport rejects oversized array max/exact-length and set max constraints before element work, in both CJS/ESM builds, while retaining the 64-error bound. This extension still requires the complete clean-install PLC/container acceptance gate. Regression checks cover async parsing, nested paths, valid input and refinement compatibility. Version-based advisories remain visible and are accepted only for the checksum-pinned, regression-tested patch.
+Why: PDS OAuth uses the Zod 3 refinement API. A version substitution with Zod 4 breaks that API. Reviewing upstream's collection-bound fix showed an error-count cap alone did not prevent expensive element traversal. The scoped v3 backport rejects oversized array max/exact-length and set max constraints before element work, in both CJS/ESM builds, while retaining the 64-error bound. Clean-install PLC checks and full two-network container/recovery acceptance pass with the owner-approved lookup correction and all original assertions retained. Regression checks cover async parsing, nested paths, valid input and refinement compatibility. Version-based advisories remain visible and are accepted only for the checksum-pinned, regression-tested patch.
 
 Touches: services/pds/patches, services/dev-plc/patches, services/security/zod-check.mjs
+
+
+## 2026-11-06: Scan the complete runtime and keep residual findings explicit
+
+Why: Application-only audits missed build tools, old privilege-drop helpers and the native ActivityPub executable. Stable GoToSocial source is rebuilt with compatible pinned security dependencies and an AGPL source offer; PostgreSQL keeps its official server/entrypoint while gosu is rebuilt with patched Go/modules. Node service images contain the actual runtime libraries and their package metadata rather than package-manager/build caches or unused system zlib/OpenSSL/OpenMP. Full image scans now have no high/critical findings. Existing medium/low glibc/GCC findings remain visible, version-scoped and documented with primary distribution sources. Unknown/new/actionable findings fail the release review gate. Swapping scan feeds or claiming unproven non-affectation is not a fix.
+
+Touches: Dockerfile, services/activitypub/security, services/postgres, services/pds/Dockerfile, services/dev-plc/Dockerfile, services/security/runtime-review.json, scripts/verify-image-security.py
+
+## 2026-11-06: Validate native state with fresh disposable container restores
+
+Why: The full acceptance run must prove native signup and data continuity without borrowing live credentials, existing volumes or public identities. Each fixture generates its own keys, requires SMTP verification, injects PDS failure/app restart, publishes real canonical media to both native servers and then quiesces writers. Recovery restores all PostgreSQL tables and native volumes into another project, verifies every SQLite store and source ID/blob/private media, and keeps outbound workers disabled. Linux loopback ingress reaches an internal Docker network without opening an outbound gateway. PostgreSQL readiness uses a real TCP query to avoid the temporary init server. Native-profile and archive-rejection drills are separate corroborating checks.
+
+Touches: deploy/compose.acceptance.yaml, scripts/verify-containers-local.py, scripts/container_bridge.py, scripts/verify-recovery-local.py

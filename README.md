@@ -41,3 +41,9 @@ python3 scripts/verify-agent-security.py   # native erasure privacy regression
 See `docs/platform-alignment.md` for implemented network behavior and limits, `docs/operations.md` for deployment, backups, rollback and the public-launch gate, and `docs/brief.md` for the agreed scope. This repository contains the application implementation; live provider acceptance and public deployment still require operator-owned accounts and infrastructure.
 
 New signups enroll automatically on configured hosted ActivityPub and AT Protocol servers after email verification. Settings shows per-network progress and supports recovery without recreating ready identities. Existing installations keep their pre-existing identities. See `docs/recovery.md` for encrypted snapshots and isolated restore drills.
+
+Local two-network container acceptance and encrypted fresh-volume/database recovery
+are covered by `scripts/verify-containers-local.py`. See `docs/recovery.md` for
+backup operations and `docs/container-security.md` for the complete image review,
+exact residual findings and the release scan gate. Local validation does not
+configure or deploy a production host.

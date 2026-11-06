@@ -3,6 +3,16 @@ services:
   app:
     build: ..
     restart: unless-stopped
+    read_only: true
+    cap_drop: ['ALL']
+    security_opt: ['no-new-privileges:true']
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=64m']
+    healthcheck:
+      test: ['CMD', '/app/zing-healthcheck']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
     env_file: ../.env.production
     environment:
       LIDZA_ADDR: 0.0.0.0:3000
@@ -16,9 +26,10 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       valkey: {condition: service_healthy}
-    volumes: ['owner-claim:/app/config/owner-claim']
+    volumes: ['owner-claim:/app/config/owner-claim', 'storage:/app/storage']
   postgres:
-    image: postgres:17
+    image: zing-postgres:17-security.1
+    build: ../services/postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: zing
@@ -26,12 +37,12 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
     volumes: ['postgres:/var/lib/postgresql/data']
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U zing -d zing']
+      test: ['CMD-SHELL', 'PGPASSWORD="$${POSTGRES_PASSWORD}" psql -h 127.0.0.1 -U zing -d zing -Atc "SELECT 1" >/dev/null']
       interval: 5s
       timeout: 3s
       retries: 20
   valkey:
-    image: valkey/valkey:8
+    image: valkey/valkey:8-alpine
     restart: unless-stopped
     command: ['valkey-server', '--appendonly', 'yes']
     volumes: ['valkey:/data']
@@ -44,3 +55,4 @@ volumes:
   postgres:
   valkey:
   owner-claim:
+  storage:

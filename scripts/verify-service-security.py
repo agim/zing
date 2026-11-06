@@ -10,7 +10,7 @@ for name, expected in provenance["artifacts"].items():
         == expected
     ), "Vendor archive checksum changed"
 patches = {
-    "zod@3.25.76.patch": "6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298",
+    "zod@3.25.76.patch": "4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f",
     "deepmerge@4.3.1.patch": "5d4a4389c315f84c61fea91aba67c2e34299c8dbb5d29b569ea9a20dccec08a0",
 }
 reviewed = {

@@ -103,11 +103,14 @@ created = []
 children = []
 logs = []
 try:
-    backup.backup(config, archive, recipient, True)
+    inventory = backup.backup(config, archive, recipient, True)
+    (folder / (archive.name + ".inventory.json")).write_text(
+        json.dumps(inventory, indent=2) + "\n"
+    )
     with tempfile.TemporaryDirectory(prefix="drill-", dir=folder) as temp:
         temp = pathlib.Path(temp)
         restored = temp / "restored"
-        backup.restore(archive, identity, restored, backup.digest(archive))
+        backup.restore(archive, identity, restored, inventory["sha256"])
         manifest = backup.verify(restored)
         corrupted = temp / "corrupt.age"
         bad = bytearray(archive.read_bytes())

@@ -109,71 +109,86 @@ test("verified account sees honest empty states and can switch themes on mobile"
     },
   });
   expect(registered.status()).toBe(201);
-  // The browser runner receives the dedicated test DATABASE_URL from lidza test.
-  // The generated email is fixture data and its token is never printed.
-  const dsn =
-    process.env.DATABASE_URL ||
-    "postgres:///zing_test?host=/var/run/postgresql";
-  const sql = `SELECT coalesce(text,'') || coalesce(html,'') FROM mail_message WHERE recipient='${email}' ORDER BY created_at DESC LIMIT 1`;
-  const content = execFileSync("psql", [dsn, "-Atc", sql], {
-    encoding: "utf8",
-  });
-  const token = content.match(/[?&]token=([A-Za-z0-9_-]+)/)?.[1];
-  expect(
-    token,
-    "verification link was written to the real test outbox",
-  ).toBeTruthy();
-  const verified = await page.request.post("/api/v1/auth/verify", {
-    data: { token },
-  });
-  expect(verified.status()).toBe(204);
-  await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: "Your world starts here." }),
-  ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Settings", exact: true })
-    .first()
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Connected accounts", exact: true }),
-  ).toBeVisible();
-  await page.getByLabel("Theme", { exact: true }).selectOption("dark");
-  await expect(page.locator("body")).toHaveAttribute("data-theme", "dark");
-  await page.reload();
-  await expect(page.locator("body")).toHaveAttribute("data-theme", "dark");
-  await page
-    .getByRole("button", { name: "Create a post", exact: true })
-    .click();
-  await page
-    .getByRole("textbox", { name: "Post text", exact: true })
-    .fill("An idea before connecting any accounts");
-  await page.getByRole("button", { name: "Save draft", exact: true }).click();
-  await expect(page).toHaveURL(/#Publishing$/);
-  await expect(page.getByRole("heading", { name: "Ideas, in motion.", exact: true })).toBeVisible();
-  await expect(
-    page.getByText("An idea before connecting any accounts", { exact: true }),
-  ).toBeVisible();
-  await page.reload();
-  await expect(
-    page.getByText("An idea before connecting any accounts", { exact: true }),
-  ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Continue writing", exact: true })
-    .click();
-  await expect(
-    page.getByRole("textbox", { name: "Post text", exact: true }),
-  ).toHaveValue("An idea before connecting any accounts");
-  await expect(
-    page.getByRole("button", { name: "Publish", exact: true }),
-  ).toBeDisabled();
-  await page.setViewportSize({ width: 390, height: 844 });
-  await expectNoSidewaysScroll(page);
-  await page.getByRole("button", { name: "Messages", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Your inbox is quiet." }),
-  ).toBeVisible();
-  await expectNoSidewaysScroll(page);
+  try {
+    // The browser runner receives the dedicated test DATABASE_URL from lidza test.
+    // The generated email is fixture data and its token is never printed.
+    const dsn =
+      process.env.DATABASE_URL ||
+      "postgres:///zing_test?host=/var/run/postgresql";
+    const sql = `SELECT coalesce(text,'') || coalesce(html,'') FROM mail_message WHERE recipient='${email}' ORDER BY created_at DESC LIMIT 1`;
+    const content = execFileSync("psql", [dsn, "-Atc", sql], {
+      encoding: "utf8",
+    });
+    const token = content.match(/[?&]token=([A-Za-z0-9_-]+)/)?.[1];
+    expect(
+      token,
+      "verification link was written to the real test outbox",
+    ).toBeTruthy();
+    const verified = await page.request.post("/api/v1/auth/verify", {
+      data: { token },
+    });
+    expect(verified.status()).toBe(204);
+    await page.goto("/");
+    await expect(
+      page.getByRole("heading", { name: "Your world starts here." }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Settings", exact: true })
+      .first()
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Connected accounts", exact: true }),
+    ).toBeVisible();
+    await page.getByLabel("Theme", { exact: true }).selectOption("dark");
+    await expect(page.locator("body")).toHaveAttribute("data-theme", "dark");
+    await page.reload();
+    await expect(page.locator("body")).toHaveAttribute("data-theme", "dark");
+    await page
+      .getByRole("button", { name: "Create a post", exact: true })
+      .click();
+    await page
+      .getByRole("textbox", { name: "Post text", exact: true })
+      .fill("An idea before connecting any accounts");
+    await page.getByRole("button", { name: "Save draft", exact: true }).click();
+    await expect(page).toHaveURL(/#Publishing$/);
+    await expect(
+      page.getByRole("heading", { name: "Ideas, in motion.", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("An idea before connecting any accounts", { exact: true }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByText("An idea before connecting any accounts", { exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Continue writing", exact: true })
+      .click();
+    await expect(
+      page.getByRole("textbox", { name: "Post text", exact: true }),
+    ).toHaveValue("An idea before connecting any accounts");
+    await expect(
+      page.getByRole("button", { name: "Publish", exact: true }),
+    ).toBeDisabled();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expectNoSidewaysScroll(page);
+    await page.getByRole("button", { name: "Messages", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Your inbox is quiet." }),
+    ).toBeVisible();
+    await expectNoSidewaysScroll(page);
+  } finally {
+    // A verified fixture enrolls on newly configured networks. Delete through
+    // the real lifecycle so later test-database copies contain no orphan work.
+    const deleted = await page.request.post("/api/v1/auth/delete", {
+      data: { password: "browser-verified-password-123" },
+      headers: {
+        Origin: new URL(registered.url()).origin,
+        "Sec-Fetch-Site": "same-origin",
+      },
+    });
+    expect(deleted.status(), "browser fixture account was removed").toBe(204);
+  }
 });
 
 test("first-run page uses installation status and does not expose credentials", async ({

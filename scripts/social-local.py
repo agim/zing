@@ -41,6 +41,13 @@ def install():
         RUNTIME.mkdir(parents=True, exist_ok=True)
         with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as archive:
             archive.extractall(RUNTIME, filter="data")
+    installed_version = subprocess.check_output(
+        [str(RUNTIME / "gotosocial"), "--version"], text=True
+    )
+    if "0.22.3-zing-security.1" not in installed_version:
+        subprocess.run(
+            ["python3", str(ROOT / "scripts/build-activitypub.py")], check=True
+        )
     subprocess.run(
         ["corepack", "pnpm", "install", "--frozen-lockfile"],
         cwd=ROOT / "services/pds",

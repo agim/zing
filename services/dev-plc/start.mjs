@@ -7,7 +7,7 @@ const leader = new SequencerLeader(db);
 void leader.run().catch(() => { console.error('PLC sequencing failed'); process.exit(1); });
 const server = PlcServer.create({ db, port: Number(process.env.ZING_PLC_PORT || 2582) });
 const listen = server.app.listen.bind(server.app);
-server.app.listen = (port) => listen(port, '127.0.0.1');
+server.app.listen = (port) => listen(port, process.env.ZING_PLC_BIND || '127.0.0.1');
 await server.start();
 for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, async () => {
   await server.destroy();

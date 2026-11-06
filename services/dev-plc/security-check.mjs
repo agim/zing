@@ -1,8 +1,11 @@
+import {checkZodBounds} from '../security/zod-check.mjs';
+import {pathToFileURL} from 'node:url';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const plc=createRequire(require.resolve('@did-plc/server'));
-const {z}=plc('zod');
+const library=createRequire(plc.resolve('@did-plc/lib'));
+const {z}=library('zod');
 const result=z.array(z.object({children:z.array(z.number())})).safeParse(Array(10000).fill({children:['invalid','invalid']}));
 assert.equal(result.success,false);
 assert.ok(result.error.issues.length>0&&result.error.issues.length<=64);
@@ -10,3 +13,9 @@ assert.equal(z.string().safeParse('compatible').success,true);
 const {Migrator}=plc('kysely');assert.equal(typeof Migrator,'function');
 await import('@did-plc/server');
 console.log(JSON.stringify({status:'ok',checks:['bounded validation issues','compatible migrations','maintained PLC import']}));
+
+await checkZodBounds(z);
+const packagePath=library.resolve('zod/package.json');
+const esm=await import(new URL('index.js',pathToFileURL(packagePath)).href);
+await checkZodBounds(esm.z);
+console.log(JSON.stringify({status:'ok',checks:['CJS/ESM leading collection bounds','async bounds','v3 refinement compatibility']}));

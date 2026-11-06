@@ -102,10 +102,42 @@ Container images retain their upstream binaries/licenses. Zing's own application
 
 The service audit on 2026-11-05 uses PDS 0.5.52 and maintained unbundled PLC source at `29f1a70ee9f6f80a25946cac103b2f745e371334`. `services/vendor/provenance.json` pins archive hashes; archives retain upstream TypeScript source and MIT license. The local PLC migration preserves existing DIDs and signing keys; newer DID documents use Multikey for the same verification key.
 
-Run `python3 scripts/verify-service-security.py` after installing both service locks. It checks actual resolved code, archive/patch hashes and fresh production dependency audits. PDS retains two upstream **version alerts** (Zod high, deepmerge low); local PLC retains the Zod alert. Compatible code backports bound Zod error retention and reject prototype-control merge keys. Regression tests exercise the installed code. Unknown alerts or changed backports fail the script. This is documented backport evidence, not an upstream clean-audit claim. Zod 4 breaks PDS OAuth compatibility, so it is not substituted merely to silence a version scanner.
+Run `python3 scripts/verify-service-security.py` after installing both service locks. It checks actual resolved code, archive/patch hashes and fresh production dependency audits. PDS retains two upstream **version alerts** (Zod high, deepmerge low); local PLC retains the Zod alert. Compatible code backports reject oversized constrained collections before element traversal, bound Zod error retention and reject prototype-control merge keys. Regression tests exercise the installed code. Unknown alerts or changed backports fail the script. This is documented backport evidence, not an upstream clean-audit claim. Zod 4 breaks PDS OAuth compatibility, so it is not substituted merely to silence a version scanner.
 
 `lidza check --security` includes Go vulnerability scanning, Rust advisory/license checks and the frontend audit. The Rust/WASM media pack fully decodes bounded still images, applies orientation, resizes to 1400px, strips original metadata and emits canonical PNG. Animated/damaged uploads are rejected. The pack has no network/filesystem access, a 256 MiB memory ceiling and a five-second deadline.
 
 Local acceptance: `scripts/verify-hosting-local.py`, `scripts/verify-community-local.py`, and `scripts/verify-federation-local.py`. The community script creates a labeled temporary user, exercises real native administration and restores the installation’s private registration policy. Keep tests on feature/module boundaries; run the complete suite and browser gate before a version release.
 
 Public deployment still needs container runtime validation, real TLS/domains, outbound federation and AppView credentials/configuration where desired, SMTP/storage choices, backup restoration and traffic/rollback checks. Local PLC is loopback-only and excluded from the production stack. Threads still requires an approved Meta developer app; unavailable operations remain explicit.
+
+
+## Unified signup
+
+A new Zing registration persists an enrollment in the same auth transaction. No
+native server is contacted until the email is verified and the current instance
+access policy allows that account. ActivityPub and AT Protocol provision through
+independent durable jobs. Each native reservation retains its credentials and
+operation ID across timeouts and process restarts; a ready identity survives
+failure of another destination. Settings exposes progress and an owned retry.
+A periodic durable sweep recovers a missed event or networks configured later;
+after eight failed attempts, an explicit retry is required. Deleted and locally
+suspended users are ineligible. Existing users without an enrollment retain the
+manual identity path; no unsolicited legacy account migration occurs.
+
+Generated names fit both native servers: two ASCII name characters (or `zi`)
+plus 64 random bits. The reference PDS allows 3–18 characters in service-domain
+usernames; validation enforces that limit for manual creation too. This creates
+an ActivityPub identity and a hosted AT Protocol identity, interoperable with
+Mastodon and Bluesky respectively. It does not create accounts on every remote
+instance or on commercial networks such as Threads.
+
+## Runtime sources
+
+`services/activitypub/security/README.md` records the stable GoToSocial source and
+compatible dependency rebuild, with corresponding-source instructions and AGPL
+license in the image. The private provisioning agent runs as UID 10001. The PDS
+runs as UID 65532 in a minimal Node runtime; upgrading a previous Docker PDS
+volume owned by UID 1000 requires an explicit maintenance-window ownership
+migration before startup. Never alter the native identity domain during an
+image upgrade. Both services use a read-only root, dropped capabilities and a
+writable state volume plus bounded temporary storage.

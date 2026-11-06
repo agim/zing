@@ -13,7 +13,12 @@ services:
   activitypub:
     build: ../services/activitypub
     restart: unless-stopped
+    read_only: true
+    cap_drop: ['ALL']
+    security_opt: ['no-new-privileges:true']
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=256m']
     environment:
+      PYTHONDONTWRITEBYTECODE: '1'
       ZING_ACTIVITYPUB_DOMAIN: ${ZING_ACTIVITYPUB_DOMAIN:?set ZING_ACTIVITYPUB_DOMAIN}
       ZING_AGENT_TOKEN: ${ZING_ACTIVITYPUB_AGENT_TOKEN:?set ZING_ACTIVITYPUB_AGENT_TOKEN}
     ports: ['127.0.0.1:8081:8080']
@@ -28,6 +33,10 @@ services:
       context: ../services
       dockerfile: pds/Dockerfile
     restart: unless-stopped
+    read_only: true
+    cap_drop: ['ALL']
+    security_opt: ['no-new-privileges:true']
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=256m']
     env_file: ../.env.pds.production
     environment:
       PDS_HOSTNAME: ${ZING_PDS_DOMAIN:?set ZING_PDS_DOMAIN}
@@ -42,7 +51,7 @@ services:
     ports: ['127.0.0.1:2583:2583']
     volumes: ['pds:/pds']
     healthcheck:
-      test: ['CMD', 'node', '-e', 'fetch("http://127.0.0.1:2583/xrpc/_health").then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))']
+      test: ['CMD', '/nodejs/bin/node', '-e', 'fetch("http://127.0.0.1:2583/xrpc/_health").then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))']
       interval: 10s
       timeout: 5s
       retries: 20

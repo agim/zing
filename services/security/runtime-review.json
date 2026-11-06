@@ -1,0 +1,561 @@
+{
+  "format": 1,
+  "reviewedOn": "2026-11-06",
+  "platform": "linux/amd64",
+  "policy": "Only these exact existing medium/low unfixed distribution findings are reviewed. New IDs, package versions, severity escalation, available fixes or other architectures fail. Full raw scan results remain visible.",
+  "findings": [
+    {
+      "id": "CVE-2026-102010",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "monitored_upstream_residual",
+      "reason": "No affected request path has been established. The distribution has no fixed stable package version; retain the finding, monitor upstream fixes and reassess reachability. This is not a patched or vulnerability-free claim.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-102010",
+      "packages": [
+        {
+          "name": "gcc-14-base",
+          "version": "14.2.0-19"
+        },
+        {
+          "name": "libgcc-s1",
+          "version": "14.2.0-19"
+        },
+        {
+          "name": "libstdc++6",
+          "version": "14.2.0-19"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-114690",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "monitored_upstream_residual",
+      "reason": "No affected request path has been established. The distribution has no fixed stable package version; retain the finding, monitor upstream fixes and reassess reachability. This is not a patched or vulnerability-free claim.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-114690",
+      "packages": [
+        {
+          "name": "gcc-14-base",
+          "version": "14.2.0-19"
+        },
+        {
+          "name": "libgcc-s1",
+          "version": "14.2.0-19"
+        },
+        {
+          "name": "libstdc++6",
+          "version": "14.2.0-19"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-114691",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "monitored_upstream_residual",
+      "reason": "No affected request path has been established. The distribution has no fixed stable package version; retain the finding, monitor upstream fixes and reassess reachability. This is not a patched or vulnerability-free claim.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-114691",
+      "packages": [
+        {
+          "name": "gcc-14-base",
+          "version": "14.2.0-19"
+        },
+        {
+          "name": "libgcc-s1",
+          "version": "14.2.0-19"
+        },
+        {
+          "name": "libstdc++6",
+          "version": "14.2.0-19"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-115455",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "monitored_upstream_residual",
+      "reason": "No affected request path has been established. The distribution has no fixed stable package version; retain the finding, monitor upstream fixes and reassess reachability. This is not a patched or vulnerability-free claim.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-115455",
+      "packages": [
+        {
+          "name": "gcc-14-base",
+          "version": "14.2.0-19"
+        },
+        {
+          "name": "libgcc-s1",
+          "version": "14.2.0-19"
+        },
+        {
+          "name": "libstdc++6",
+          "version": "14.2.0-19"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-95619",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "monitored_upstream_residual",
+      "reason": "No affected request path has been established. The distribution has no fixed stable package version; retain the finding, monitor upstream fixes and reassess reachability. This is not a patched or vulnerability-free claim.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-95619",
+      "packages": [
+        {
+          "name": "gcc-14-base",
+          "version": "14.2.0-19"
+        },
+        {
+          "name": "libgcc-s1",
+          "version": "14.2.0-19"
+        },
+        {
+          "name": "libstdc++6",
+          "version": "14.2.0-19"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-18374",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "no_request_controlled_fopen_mode",
+      "reason": "Requires an attacker-controlled fopen ccs mode string. Request data does not select a C stdio mode string.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-18374",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-19499",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "no_direct_runtime_import",
+      "reason": "Affected formatting/tree/deprecated DNS-printing/word expansion/conversion/glob/regex entry point is not directly imported by inspected Node or SQLite binaries. Indirect calls are not proven absent; retain as an unfixed distribution residual.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-19499",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-19542",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "no_direct_runtime_import",
+      "reason": "Affected formatting/tree/deprecated DNS-printing/word expansion/conversion/glob/regex entry point is not directly imported by inspected Node or SQLite binaries. Indirect calls are not proven absent; retain as an unfixed distribution residual.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-19542",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-5435",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "no_direct_runtime_import",
+      "reason": "Affected formatting/tree/deprecated DNS-printing/word expansion/conversion/glob/regex entry point is not directly imported by inspected Node or SQLite binaries. Indirect calls are not proven absent; retain as an unfixed distribution residual.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-5435",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-6238",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "no_direct_runtime_import",
+      "reason": "Affected formatting/tree/deprecated DNS-printing/word expansion/conversion/glob/regex entry point is not directly imported by inspected Node or SQLite binaries. Indirect calls are not proven absent; retain as an unfixed distribution residual.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-6238",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-6368",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "no_direct_runtime_import",
+      "reason": "Affected formatting/tree/deprecated DNS-printing/word expansion/conversion/glob/regex entry point is not directly imported by inspected Node or SQLite binaries. Indirect calls are not proven absent; retain as an unfixed distribution residual.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-6368",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-6791",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "no_direct_runtime_import",
+      "reason": "Affected formatting/tree/deprecated DNS-printing/word expansion/conversion/glob/regex entry point is not directly imported by inspected Node or SQLite binaries. Indirect calls are not proven absent; retain as an unfixed distribution residual.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-6791",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-77117",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "no_direct_runtime_import",
+      "reason": "Affected formatting/tree/deprecated DNS-printing/word expansion/conversion/glob/regex entry point is not directly imported by inspected Node or SQLite binaries. Indirect calls are not proven absent; retain as an unfixed distribution residual.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-77117",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-80489",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "no_direct_runtime_import",
+      "reason": "Affected formatting/tree/deprecated DNS-printing/word expansion/conversion/glob/regex entry point is not directly imported by inspected Node or SQLite binaries. Indirect calls are not proven absent; retain as an unfixed distribution residual.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-80489",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-84243",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "operator_configuration_boundary",
+      "reason": "Requires control of LANGUAGE and gettext message catalogs; environment and executable filesystem are not writable through social APIs.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-84243",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-8674",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "operator_configuration_boundary",
+      "reason": "Requires an overlong resolver search domain in resolv.conf or LOCALDOMAIN; these are operator-controlled, not supplied by Zing HTTP users.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-8674",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-86805",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "privileged_execution_not_present",
+      "reason": "Loader issue requires setuid/setgid execution; native services use non-root UID, no-new-privileges and dropped capabilities.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-86805",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-89092",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "affected_daemon_not_present",
+      "reason": "Requires nscd, which is not installed or running in these minimal service images.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-89092",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-95818",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "MEDIUM"
+      ],
+      "disposition": "privileged_execution_not_present",
+      "reason": "Loader issue requires setuid/setgid execution; native services use non-root UID, no-new-privileges and dropped capabilities.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-95818",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2010-4756",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "LOW"
+      ],
+      "disposition": "no_direct_runtime_import",
+      "reason": "Affected formatting/tree/deprecated DNS-printing/word expansion/conversion/glob/regex entry point is not directly imported by inspected Node or SQLite binaries. Indirect calls are not proven absent; retain as an unfixed distribution residual.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2010-4756",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2018-20796",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "LOW"
+      ],
+      "disposition": "no_direct_runtime_import",
+      "reason": "Affected formatting/tree/deprecated DNS-printing/word expansion/conversion/glob/regex entry point is not directly imported by inspected Node or SQLite binaries. Indirect calls are not proven absent; retain as an unfixed distribution residual.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2018-20796",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2019-1010022",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "LOW"
+      ],
+      "disposition": "monitored_upstream_residual",
+      "reason": "No affected request path has been established. The distribution has no fixed stable package version; retain the finding, monitor upstream fixes and reassess reachability. This is not a patched or vulnerability-free claim.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2019-1010022",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2019-1010023",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "LOW"
+      ],
+      "disposition": "monitored_upstream_residual",
+      "reason": "No affected request path has been established. The distribution has no fixed stable package version; retain the finding, monitor upstream fixes and reassess reachability. This is not a patched or vulnerability-free claim.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2019-1010023",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2019-1010024",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "LOW"
+      ],
+      "disposition": "monitored_upstream_residual",
+      "reason": "No affected request path has been established. The distribution has no fixed stable package version; retain the finding, monitor upstream fixes and reassess reachability. This is not a patched or vulnerability-free claim.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2019-1010024",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2019-1010025",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "LOW"
+      ],
+      "disposition": "monitored_upstream_residual",
+      "reason": "No affected request path has been established. The distribution has no fixed stable package version; retain the finding, monitor upstream fixes and reassess reachability. This is not a patched or vulnerability-free claim.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2019-1010025",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2019-9192",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "LOW"
+      ],
+      "disposition": "no_direct_runtime_import",
+      "reason": "Affected formatting/tree/deprecated DNS-printing/word expansion/conversion/glob/regex entry point is not directly imported by inspected Node or SQLite binaries. Indirect calls are not proven absent; retain as an unfixed distribution residual.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2019-9192",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-97399",
+      "images": [
+        "pds",
+        "plc"
+      ],
+      "severities": [
+        "LOW"
+      ],
+      "disposition": "other_architecture",
+      "reason": "Advisory concerns the Power8 strncasecmp optimization; this review and acceptance are Linux amd64 only.",
+      "source": "https://security-tracker.debian.org/tracker/CVE-2026-97399",
+      "packages": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4"
+        }
+      ]
+    }
+  ]
+}

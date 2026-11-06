@@ -26,7 +26,7 @@ patchedDependencies:
     hash: 5d4a4389c315f84c61fea91aba67c2e34299c8dbb5d29b569ea9a20dccec08a0
     path: patches/deepmerge@4.3.1.patch
   zod@3.25.76:
-    hash: 6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298
+    hash: 4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f
     path: patches/zod@3.25.76.patch
 
 importers:
@@ -2056,7 +2056,7 @@ snapshots:
       '@atproto-labs/simple-store': 0.5.1
       '@atproto-labs/simple-store-memory': 0.2.6
       '@atproto/did': 0.5.6
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto-labs/fetch-node@0.4.3':
     dependencies:
@@ -2082,7 +2082,7 @@ snapshots:
       '@atproto-labs/simple-store': 0.5.1
       '@atproto-labs/simple-store-memory': 0.2.6
       '@atproto/did': 0.5.6
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto-labs/identity-resolver@0.4.11':
     dependencies:
@@ -2150,14 +2150,14 @@ snapshots:
       '@atproto/lex-data': 0.1.8
       '@atproto/lex-json': 0.1.7
       '@atproto/syntax': 0.7.7
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto/common-web@0.5.16':
     dependencies:
       '@atproto/lex-data': 0.1.9
       '@atproto/lex-json': 0.1.8
       '@atproto/syntax': 0.7.7
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto/common@0.8.1':
     dependencies:
@@ -2197,7 +2197,7 @@ snapshots:
 
   '@atproto/did@0.5.6':
     dependencies:
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto/identity@0.5.20':
     dependencies:
@@ -2213,7 +2213,7 @@ snapshots:
   '@atproto/jwk@0.7.4':
     dependencies:
       multiformats: 13.4.2
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto/lex-builder@0.1.18':
     dependencies:
@@ -2344,7 +2344,7 @@ snapshots:
       '@atproto/common-web': 0.5.15
       '@atproto/syntax': 0.7.7
       multiformats: 13.4.2
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto/oauth-provider-api@0.11.0':
     dependencies:
@@ -2386,7 +2386,7 @@ snapshots:
       http-errors: 2.0.1
       ioredis: 5.11.1
       jose: 5.10.0
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
     transitivePeerDependencies:
       - supports-color
 
@@ -2398,7 +2398,7 @@ snapshots:
       '@atproto-labs/simple-store-memory': 0.2.6
       '@atproto/did': 0.5.6
       '@atproto/oauth-types': 0.7.7
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto/oauth-scopes@0.5.14':
     dependencies:
@@ -2409,7 +2409,7 @@ snapshots:
     dependencies:
       '@atproto/did': 0.5.6
       '@atproto/jwk': 0.7.4
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto/pds@0.5.52':
     dependencies:
@@ -2460,7 +2460,7 @@ snapshots:
       strtok3: 10.6.3
       uint8arrays: 5.1.1
       undici: 8.12.3
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -2476,7 +2476,7 @@ snapshots:
       '@atproto/lex-data': 0.1.8
       '@atproto/syntax': 0.7.7
       varint: 6.0.0
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto/repo@0.11.2':
     dependencies:
@@ -2487,7 +2487,7 @@ snapshots:
       '@atproto/lex-data': 0.1.8
       '@atproto/syntax': 0.7.7
       varint: 6.0.0
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto/syntax@0.7.7':
     dependencies:
@@ -2527,7 +2527,7 @@ snapshots:
   '@atproto/xrpc@0.8.16':
     dependencies:
       '@atproto/lexicon': 0.7.17
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@aws-sdk/checksums@3.1001.6':
     dependencies:
@@ -2737,7 +2737,7 @@ snapshots:
       axios: 1.20.0
       multiformats: 13.4.2
       uint8arrays: 5.1.1
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
     transitivePeerDependencies:
       - debug
       - supports-color
@@ -4654,4 +4654,4 @@ snapshots:
       y18n: 5.0.8
       yargs-parser: 22.0.0
 
-  zod@3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298): {}
+  zod@3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f): {}

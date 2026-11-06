@@ -19,3 +19,5 @@ storage
 config/credentials.yml.enc
 
 __pycache__
+**/node_modules
+**/__pycache__

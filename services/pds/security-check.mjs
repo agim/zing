@@ -1,3 +1,5 @@
+import {checkZodBounds} from '../security/zod-check.mjs';
+import {pathToFileURL} from 'node:url';
 // Exercises the actual resolved dependencies, including the backported paths.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
@@ -35,3 +37,9 @@ const patches = Object.fromEntries(['zod@3.25.76.patch','deepmerge@4.3.1.patch']
 }));
 await import('@atproto/pds');
 console.log(JSON.stringify({status:'ok', checks:['bounded Zod validation errors','prototype isolation','merge compatibility','PDS import'], patches}));
+
+await checkZodBounds(z);
+const packagePath=pdsRequire.resolve('zod/package.json');
+const esm=await import(new URL('index.js',pathToFileURL(packagePath)).href);
+await checkZodBounds(esm.z);
+console.log(JSON.stringify({status:'ok',checks:['CJS/ESM leading collection bounds','async bounds','v3 refinement compatibility']}));

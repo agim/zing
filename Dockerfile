@@ -6,11 +6,11 @@
 # the framework at a local checkout (--lidza-dir) cannot build here: pin a
 # published version first.
 
+FROM node:24.22.1-bookworm-slim AS node
 FROM golang:1.27-bookworm AS build
+COPY --from=node /usr/local/ /usr/local/
 ENV CGO_ENABLED=0
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl \
- && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
- && apt-get install -y --no-install-recommends nodejs \
  && rm -rf /var/lib/apt/lists/*
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain 1.99.1 --target wasm32-wasip1
 ENV PATH="/root/.cargo/bin:$PATH"
@@ -24,9 +24,9 @@ COPY go.mod go.sum sqlc.yaml* ./
 RUN if [ -f sqlc.yaml ]; then CGO_ENABLED=1 go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1; fi
 RUN go mod download
 COPY package.json package-lock.json* ./
-RUN npm ci --no-fund --no-audit || npm install --no-fund --no-audit
+RUN npm ci --no-fund --no-audit
 COPY . .
-RUN mkdir -p db mail admin config && lidza build --out /out/zing \
+RUN mkdir -p db mail admin config/owner-claim storage && lidza build --out /out/zing \
  && go build -o /out/zing-healthcheck ./cmd/healthcheck
 
 # Runtime: the binary and what it reads from disk: the migrations (applied
@@ -37,7 +37,7 @@ RUN mkdir -p db mail admin config && lidza build --out /out/zing \
 # Node at runtime: use node:22-bookworm-slim here instead and copy dist/.server.
 # The local storage provider writes to STORAGE_DIR, which this read-only
 # image has no room for: use STORAGE_PROVIDER=s3, or mount a volume there.
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian13:nonroot
 WORKDIR /app
 # Owned by the image's nonroot user (65532), which runs the binary: a
 # checkout made under umask 0077 leaves these files 0600 and directories
@@ -51,6 +51,7 @@ COPY --from=build --chown=65532:65532 /src/db /app/db
 COPY --from=build --chown=65532:65532 /src/mail /app/mail
 COPY --from=build --chown=65532:65532 /src/admin /app/admin
 COPY --from=build --chown=65532:65532 /src/config /app/config
+COPY --from=build --chown=65532:65532 /src/storage /app/storage
 # Plain HTTP on 3000 behind a proxy, or, with LIDZA_TLS_DOMAINS in the
 # environment (deploy/production.env), HTTPS on 443 and the redirect on 80.
 ENV LIDZA_ADDR=0.0.0.0:3000

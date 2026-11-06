@@ -4,9 +4,9 @@
 
 Run `lidza doctor`, `lidza install`, and `lidza credentials init`. Keep the CLI at the version pinned in go.mod. Never commit .env files or config/master.key. The generated encrypted credentials file is environment-specific; provision fresh production credentials instead of copying development values.
 
-Production needs PostgreSQL, Valkey, an HTTPS origin, an SMTP service, S3-compatible private object storage, and a stable LIDZA_MASTER_KEY. Configure THREADS_CLIENT_ID and THREADS_CLIENT_SECRET only in sealed settings or the process environment. Meta app review and approved scopes are a launch dependency. Register the documented callback URI exactly. Bluesky OAuth metadata must be publicly readable on APP_URL; app passwords are an explicit local-development alternative.
+Production needs PostgreSQL, Valkey, an HTTPS origin, an SMTP service, private object storage (a persisted local volume or S3-compatible storage), and a stable LIDZA_MASTER_KEY. Configure THREADS_CLIENT_ID and THREADS_CLIENT_SECRET only in sealed settings or the process environment. Meta app review and approved scopes are a launch dependency. Register the documented callback URI exactly. Bluesky OAuth metadata must be publicly readable on APP_URL; app passwords are an explicit local-development alternative.
 
-The generated Dockerfile builds the embedded frontend and Go binary. `deploy/compose.yaml` provisions the app, PostgreSQL and Valkey; place a TLS reverse proxy in front of localhost:3000. For an external proxy, configure LIDZA_TRUSTED_PROXIES to its actual address/CIDR. The supplied Caddyfile assumes Caddy is attached to the Compose network; adapt its upstream if Caddy runs on the host.
+The Dockerfile builds the embedded frontend and Go binary. `deploy/compose.yaml` provisions the app, PostgreSQL and Valkey; place a TLS reverse proxy in front of localhost:3000. For an external proxy, configure LIDZA_TRUSTED_PROXIES to its actual address/CIDR. The supplied Caddyfile assumes Caddy is attached to the Compose network; adapt its upstream if Caddy runs on the host.
 
 Apply migrations with `lidza db migrate --production` or DB_MIGRATE=true. All nodes share the database, master key, auth secret, and Valkey. Keep owner-claim state private and complete the one-time administrator claim; do not let the first visitor become an operator. Public API requests are limited per account; credential routes have separate throttles.
 
@@ -36,4 +36,13 @@ The repository connection used for the initial push cannot create workflow files
 
 ## Hosted server acceptance
 
-This installation also owns ActivityPub and PDS identities. Follow `social-servers.md` for companion service startup, immutable identity domains, backend backups, deletion jobs and actual isolated federation acceptance. The current `lidza.stack.json` covers the Zing application infrastructure; deploy its companion servers independently and configure their origins/secrets, or use the prepared Compose overlay. It does not yet install all protocol services through Līdza Deploy automatically. The current Node-service dependency audit findings and unverified container deployment block a public release; passing client/browser tests alone does not clear those holds.
+This installation also owns ActivityPub and PDS identities. Follow `social-servers.md` for companion service startup, immutable identity domains, backend backups, deletion jobs and actual isolated federation acceptance. The current `lidza.stack.json` covers the Zing application infrastructure; deploy its companion servers independently and configure their origins/secrets, or use the prepared Compose overlay. It does not yet install all protocol services through Līdza Deploy automatically. See `container-security.md` for the current image/backport review and remaining release holds. Disposable two-network container acceptance and fresh-volume recovery have passed locally. This does not substitute for the configured production host, HTTPS origins, external SMTP delivery, provider credentials or Meta review.
+
+For the complete encrypted native/app recovery boundary, tooling and isolated drills, see `recovery.md`. Never restore application rows without the matching native repositories, blobs and keys.
+
+
+Local acceptance commands and results are recorded in `recovery.md` and
+`container-security.md`. PostgreSQL health requires a successful authenticated TCP
+query so the temporary initialization server cannot falsely satisfy readiness.
+The container fixture uses an internal network with loopback test ingress and
+never creates a public-network identity. No production deployment was performed.

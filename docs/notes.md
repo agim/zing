@@ -17,3 +17,7 @@ decision (docs/decisions.md).
 - Local moderation uses native GoToSocial/PDS controls; the private agent must remain unreachable from public ingress. The supervisor must acknowledge GoToSocial restarts before reversible account state changes count as confirmed. No deployment has been performed.
 
 - 2026-11-06: Owner requested completing container validation, backup/restore and dependency review locally before deployment. A single new Zing signup must enroll the user automatically on every configured hosted network. Email verification precedes native provisioning; ActivityPub and AT Protocol accounts are independent durable jobs, with partial progress/retry visible in Settings. Threads is not a self-hosted registration service and must never appear provisioned by this enrollment.
+
+- 2026-11-06: Owner explicitly approved correcting the PLC security test to resolve Zod from its declaring @did-plc/lib dependency while retaining every assertion, then completing two-network container validation/recovery and security review locally. No deployment is authorized.
+
+- 2026-11-06: Līdza clones the browser test database into Go package fixtures. A verified browser registration must delete itself through the auth deletion lifecycle after its assertions; otherwise a later backend mock correctly receives automatic provisioning for an unrelated leftover signup. The browser test now retains every assertion and additionally asserts fixture deletion. Cleanup applies only to its generated test account; no application behavior is bypassed.

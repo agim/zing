@@ -21,7 +21,7 @@ overrides:
 
 patchedDependencies:
   zod@3.25.76:
-    hash: 6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298
+    hash: 4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f
     path: patches/zod@3.25.76.patch
 
 importers:
@@ -1015,7 +1015,7 @@ snapshots:
       '@atproto/lex-data': 0.1.9
       '@atproto/lex-json': 0.1.8
       '@atproto/syntax': 0.7.7
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
 
   '@atproto/common@0.8.1':
     dependencies:
@@ -1061,7 +1061,7 @@ snapshots:
       axios: 1.21.0
       multiformats: 13.4.2
       uint8arrays: 5.1.1
-      zod: 3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298)
+      zod: 3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f)
     transitivePeerDependencies:
       - debug
       - supports-color
@@ -2138,4 +2138,4 @@ snapshots:
       y18n: 5.0.8
       yargs-parser: 21.1.1
 
-  zod@3.25.76(patch_hash=6a0bebf9acec205e5d978a7a7e89516e8d7c3a421f3a8f94e37a2b5effc09298): {}
+  zod@3.25.76(patch_hash=4d5d3cae6bc9898a5ad2385d066e7c025f446a49793e6d8178c0388112fdbe3f): {}

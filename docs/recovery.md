@@ -63,9 +63,13 @@ are private under `.lidza/recovery/`; the recovery age key is not an app credent
 `python3 scripts/verify-containers-local.py` creates disposable Compose projects,
 registers a real fixture through SMTP and native servers, injects an unavailable
 PDS/restart, publishes real media, and restores encrypted snapshots into fresh
-volumes/databases. Requires Docker Compose 2.24+ and age. The fixture's internal
-network has no public egress and no public identities. It never uses production
-`.env` files. It cleans only its uniquely named fixture projects and volumes.
+volumes/databases. Requires a Linux Docker host with direct internal-bridge access, Docker Compose
+2.24+ and age. A loopback-only bridge supplies test ingress without adding an
+egress gateway to the isolated fixture. The fixture's internal
+network has no public egress and no public identities. It verifies every public table in both restored databases, every native SQLite
+store, source post IDs, blob bytes and private media access. Recovery uses the
+producer-recorded inventory hash rather than trusting a new hash of the restored
+archive. It never uses production `.env` files. It cleans only its uniquely named fixture projects and volumes.
 
 A restore is a recovery boundary, not a normal binary rollback: reconcile uncertain
 publications before enabling workers to avoid duplicating upstream posts. Keep a

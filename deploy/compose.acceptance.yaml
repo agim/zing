@@ -1,0 +1,75 @@
+# Local disposable fixture: merge with compose.yaml + compose.social.yaml.
+# The image/runtime paths are production paths; only identity origins/mail differ.
+services:
+  app:
+    image: zing:release-check
+    env_file: !override ['${ZING_TEST_ENV_FILE}']
+    ports: !reset []
+    build:
+      network: host
+    environment:
+      LIDZA_MODE: dev
+      APP_URL: http://127.0.0.1:${ZING_TEST_PORT:-13000}
+      AUTH_COOKIE_SECURE: 'false'
+      ZING_ACCESS_MODE: public
+      ZING_REQUIRE_SETUP: 'false'
+      ZING_ACTIVITYPUB_URL: http://activitypub:8080
+      ZING_PDS_URL: http://pds:2583
+      ZING_PDS_HANDLE_DOMAIN: test
+      MAIL_PROVIDER: smtp
+      MAIL_SMTP_URL: smtp://mail:1025
+      MAIL_SMTP_SECURITY: none
+      MAIL_FROM: Zing fixture <noreply@zing.invalid>
+      STORAGE_PROVIDER: local
+      STORAGE_DIR: /app/storage
+    volumes: ['storage:/app/storage']
+    depends_on:
+      activitypub: {condition: service_healthy}
+      pds: {condition: service_healthy}
+      mail: {condition: service_started}
+  activitypub:
+    image: zing-activitypub:release-check
+    ports: !reset []
+    build:
+      network: host
+    environment:
+      ZING_ACTIVITYPUB_DOMAIN: activitypub:8080
+      ZING_ACTIVITYPUB_PROTOCOL: http
+  pds:
+    image: zing-pds:release-check
+    env_file: !reset []
+    ports: !reset []
+    build:
+      network: host
+    environment:
+      PDS_HOSTNAME: localhost
+      PDS_DID_PLC_URL: http://plc:2582
+      PDS_DEV_MODE: 'true'
+      PDS_SERVICE_HANDLE_DOMAINS: .test
+    depends_on:
+      plc: {condition: service_started}
+  postgres:
+    image: zing-postgres:release-check
+    build:
+      network: host
+  plc:
+    image: zing-plc:release-check
+    build:
+      context: ../services
+      dockerfile: dev-plc/Dockerfile
+      network: host
+    environment:
+      ZING_PLC_DATABASE_URL: postgres://zing:${POSTGRES_PASSWORD}@postgres:5432/zing_plc
+      ZING_PLC_BIND: 0.0.0.0
+    depends_on:
+      postgres: {condition: service_healthy}
+  mail:
+    image: python:3.12-slim
+    command: ['python3', '/fixture/local-mail.py', '--bind', '0.0.0.0', '--directory', '/messages']
+    volumes: ['../scripts/local-mail.py:/fixture/local-mail.py:ro', 'mail:/messages']
+networks:
+  default:
+    internal: true
+volumes:
+  storage:
+  mail:

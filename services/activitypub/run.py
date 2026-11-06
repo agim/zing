@@ -6,9 +6,12 @@ from pathlib import Path
 root = Path("/data")
 root.mkdir(exist_ok=True)
 domain = os.environ["ZING_ACTIVITYPUB_DOMAIN"]
+protocol = os.environ.get("ZING_ACTIVITYPUB_PROTOCOL", "https")
+if protocol not in ("http", "https"):
+    raise SystemExit("Invalid ActivityPub protocol")
 config = {
     "host": domain,
-    "protocol": "https",
+    "protocol": protocol,
     "bind-address": "0.0.0.0",
     "port": 8080,
     "db-type": "sqlite",
@@ -24,7 +27,7 @@ os.environ.update(
     GTS_CONFIG_PATH="/data/config.json",
     GTS_BINARY="/gotosocial/gotosocial",
     ZING_AGENT_DATA="/data/agent",
-    ZING_ACTIVITYPUB_URL="https://" + domain,
+    ZING_ACTIVITYPUB_URL=protocol + "://" + domain,
     ZING_AGENT_BIND="0.0.0.0",
 )
 children = []
