@@ -6,7 +6,7 @@ require (
 	github.com/agim/lidza v0.1.132
 	github.com/bluesky-social/indigo v0.0.0-20261103210605-a41b056300f5
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.11.0
+	github.com/jackc/pgx/v5 v5.12.0
 	golang.org/x/net v0.62.0
 )
 
