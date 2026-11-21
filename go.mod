@@ -1,6 +1,6 @@
 module zing
 
-go 1.27
+go 1.27.4
 
 require (
 	github.com/agim/lidza v0.1.132
